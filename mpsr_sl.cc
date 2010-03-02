@@ -19,6 +19,7 @@
 #ifdef HPUX_9
 #include <signal.h>
 #endif
+#include <sys/wait.h>
 #include "mpsr.h"
 #include "tok.h"
 #include "omalloc.h"
@@ -116,9 +117,9 @@ static void GetCmdArgs(int *argc, char ***argv, char *str)
  ***************************************************************/
 LINKAGE BOOLEAN slOpenMPFile(si_link l, short flag)
 {
-  char *argv[] = {"--MPtransp", "FILE", "--MPmode", "append",
-                  "--MPfile", "/tmp/mpout"};
-  char *mode;
+  const char *argv[] = {"--MPtransp", "FILE", "--MPmode", "append",
+                        "--MPfile", "/tmp/mpout"};
+  const char *mode;
 
   MP_Link_pt link = NULL;
 
@@ -178,12 +179,12 @@ LINKAGE BOOLEAN slOpenMPFile(si_link l, short flag)
 
 LINKAGE MP_Link_pt slOpenMPConnect(int n_argc, char **n_argv)
 {
-  char *argv[] = {"--MPtransp", "TCP", "--MPmode", "connect", "--MPport",
-                  "1025",  "--MPhost", "localhost","--MPrsh","ssh"};
+  const char *argv[] = {"--MPtransp", "TCP", "--MPmode", "connect", "--MPport",
+                       "1025",  "--MPhost", "localhost","--MPrsh","ssh"};
 
-  char *port = IMP_GetCmdlineArg(n_argc, n_argv, "--MPport");
-  char *host = IMP_GetCmdlineArg(n_argc, n_argv, "--MPhost");
-  char *rsh = IMP_GetCmdlineArg(n_argc, n_argv, "--MPrsh");
+  const char *port = IMP_GetCmdlineArg(n_argc, n_argv, "--MPport");
+  const char *host = IMP_GetCmdlineArg(n_argc, n_argv, "--MPhost");
+  const char *rsh = IMP_GetCmdlineArg(n_argc, n_argv, "--MPrsh");
 
   if (port == NULL) port = (char*) feOptValue(FE_OPT_MPPORT);
   if (host == NULL) host = (char*) feOptValue(FE_OPT_MPHOST);
@@ -203,8 +204,8 @@ LINKAGE MP_Link_pt slOpenMPConnect(int n_argc, char **n_argv)
 
 LINKAGE MP_Link_pt slOpenMPListen(int n_argc, char **n_argv)
 {
-  char *argv[] = {"--MPtransp", "TCP", "--MPmode", "listen",
-                  "--MPport", "1025"};
+  const char *argv[] = {"--MPtransp", "TCP", "--MPmode", "listen",
+                       "--MPport", "1025"};
   char *port = IMP_GetCmdlineArg(n_argc, n_argv, "--MPport");
 
   if (port == NULL) port = (char*) feOptValue(FE_OPT_MPHOST);
@@ -216,13 +217,13 @@ LINKAGE MP_Link_pt slOpenMPListen(int n_argc, char **n_argv)
 
 MP_Link_pt slOpenMPLaunch(int n_argc, char **n_argv)
 {
-  char *argv[] = {"--MPtransp", "TCP", "--MPmode", "launch",
-                  "--MPhost", "localhost",
-                  "--MPapplication", "Singular -bq  --no-warn --no-out --no-rc",
-                  "--MPrsh", "rsh"};
-  char *appl = IMP_GetCmdlineArg(n_argc, n_argv, "--MPapplication");
-  char *host = IMP_GetCmdlineArg(n_argc, n_argv, "--MPhost");
-  char *rsh = IMP_GetCmdlineArg(n_argc, n_argv, "--MPrsh");
+  const char *argv[] = {"--MPtransp", "TCP", "--MPmode", "launch",
+                       "--MPhost", "localhost",
+                       "--MPapplication", "Singular -bq  --no-warn --no-out --no-rc",
+                       "--MPrsh", "rsh"};
+  const char *appl = IMP_GetCmdlineArg(n_argc, n_argv, "--MPapplication");
+  const char *host = IMP_GetCmdlineArg(n_argc, n_argv, "--MPhost");
+  const char *rsh = IMP_GetCmdlineArg(n_argc, n_argv, "--MPrsh");
   char* nappl = NULL;
   MP_Link_pt link;
   int argc = 8;
@@ -266,7 +267,7 @@ MP_Link_pt slOpenMPLaunch(int n_argc, char **n_argv)
 LINKAGE MP_Link_pt slOpenMPFork(si_link l, int n_argc, char **n_argv)
 {
   MP_Link_pt link = NULL;
-  char *argv[] = {"--MPtransp", "TCP", "--MPmode", "fork", "--MPport", "1703"};
+  const char *argv[] = {"--MPtransp", "TCP", "--MPmode", "fork", "--MPport", "1703"};
   char *port = IMP_GetCmdlineArg(n_argc, n_argv, (char *)"--MPport");
 
   if (port != NULL) argv[5] = port;
@@ -412,7 +413,10 @@ LINKAGE BOOLEAN slCloseMP(si_link l)
 #endif  
   if ((strcmp(l->mode, "launch") == 0 || strcmp(l->mode, "fork") == 0) &&
       (MP_GetLinkStatus((MP_Link_pt)l->data,MP_LinkReadyWriting) == MP_TRUE))
+  {
     SentQuitMsg(l);
+    //wait(NULL);
+  }
   MP_CloseLink((MP_Link_pt) l->data);
 #ifdef HPUX_9
   signal(SIGCHLD, (void (*)(int))SIG_IGN);

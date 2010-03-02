@@ -11,6 +11,12 @@
 #include "structs.h"
 #include "subexpr.h"
 
+extern idhdl currPackHdl;
+extern idhdl basePackHdl;
+extern package currPack;
+extern package basePack;
+#define IDROOT (currPack->idroot)
+
 struct sip_command
 {
   sleftv arg1; /*arg1 to build_in, proc to proc_call*/
@@ -41,7 +47,8 @@ inline void paKill(package pack)
   pack->ref--;
 }
 
-class proclevel {
+class proclevel
+{
   public:
   proclevel * next;
   idhdl      cRingHdl;
@@ -65,14 +72,14 @@ typedef struct
 } SModulFunctions;
 
 
-/*extern idhdl      currRingHdl; in structs.h */
-/*extern ring     currRing;  in structs.h */
+/*extern idhdl      currRingHdl; in ring.h */
+/*extern ring     currRing;  in ring.h */
 /*extern ideal      currQuotient; in structs.h */
 
 char *idhdl2id(idhdl pck, idhdl h);
 void  iiname2hdl(const char *name, idhdl *pck, idhdl *id);
 idhdl enterid(const char * a, int lev, idtyp t, idhdl* root, BOOLEAN init=TRUE);
-idhdl ggetid(const char *n, BOOLEAN local = FALSE);
+idhdl ggetid(const char *n);
 idhdl ggetid(const char *n, BOOLEAN local, idhdl *packhdl);
 void  killid(const char * a, idhdl * i);
 void killhdl(idhdl h, package prooti=currPack);
@@ -81,24 +88,48 @@ lists ipNameList(idhdl root);
 void  ipMoveId(idhdl h);
 BOOLEAN checkPackage(package pack);
 idhdl packFindHdl(package r);
+void jjNormalizeQRingId(leftv I);
+void jjNormalizeQRingP(leftv I);
 
 #define FLAG_STD   0
 #define FLAG_TWOSTD  3
+#define FLAG_QRING   4
 #define hasFlag(A,F) Sy_inset((F),(A)->flag)
 #define setFlag(A,F) (A)->flag|=Sy_bit(F)
 #define resetFlag(A,F) (A)->flag&=~Sy_bit(F)
 void ipListFlag(idhdl h);
+
+
+#define IDNEXT(a)    ((a)->next)
+#define IDTYP(a)     ((a)->typ)
+#define IDFLAG(a)    ((a)->flag)
+#define IDLEV(a)     ((a)->lev)
+#define IDID(a)      ((a)->id)
+#define IDATTR(a)    ((a)->attribute)
+
+#define IDINT(a)    ((int)(long)((a)->data.ustring))
+#define IDDATA(a)   ((a)->data.ustring)
+#define IDRING(a)   ((a)->data.uring)
+#define IDINTVEC(a) ((a)->data.iv)
+#define IDPOLY(a)   ((a)->data.p)
+#define IDBIGINT(a) ((a)->data.n)
+#define IDNUMBER(a) ((a)->data.n)
+#define IDIDEAL(a)  ((a)->data.uideal)
+#define IDMATRIX(a) ((a)->data.umatrix)
+#define IDMAP(a)    ((a)->data.umap)
+#define IDSTRING(a) ((a)->data.ustring)
+#define IDLIST(a)   ((a)->data.l)
+#define IDLINK(a)   ((a)->data.li)
+#define IDPACKAGE(a) ((a)->data.pack)
+#define IDPROC(a)   ((a)->data.pinf)
 
 #ifndef OM_ALLOC_H
 struct omBin_s;
 #endif
 
 extern omBin_s* sip_command_bin;
-extern omBin_s* ip_command_bin;
 extern omBin_s* sip_package_bin;
-extern omBin_s* ip_package_bin;
 extern omBin_s* idrec_bin;
-extern omBin_s* namerec_bin;
 #endif
 
 

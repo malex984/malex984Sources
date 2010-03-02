@@ -1061,13 +1061,14 @@ char *yytext;
   #include "utils.h"
   #define HAVE_LIBPARSER
   #define YYLPDEBUG 1
-  #include "../kernel/febase.cc"
+  #define myfread fread
 #else
   #include "subexpr.h"
   #include "grammar.h"
   #include "ipshell.h"
   #include "ipid.h"
   #include "tok.h"
+  #include "options.h"
   #include "febase.h"
   #include "omalloc.h"
 #endif

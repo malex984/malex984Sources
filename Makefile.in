@@ -175,8 +175,11 @@ CXXSOURCES=grammar.cc scanner.cc attrib.cc \
     walk.cc walk_ip.cc \
     cntrlc.cc misc.cc \
     calcSVD.cc \
-    VanishingIdeal.cc \
-    FactoredNumber.cc
+    Minor.cc \
+    MinorProcessor.cc \
+    MinorInterface.cc \
+    FactoredNumber.cc \
+    VanishingIdeal.cc
 
 # stuff for MP
 MPSR_SOURCES = mpsr_Put.cc mpsr_PutPoly.cc mpsr_GetPoly.cc mpsr_sl.cc\
@@ -384,10 +387,13 @@ version.h: ${SOURCES} ${HEADERS} Makefile.in mod2.h.in \
 	echo "#define CXX \"" ${CXX} ${CXXFLAGS} ${DEFS} "\"" >>version.h
 
 libparse: libparse_main.o utils.o
-	${CXX}  ${CPPFLAGS} -DSTANDALONE_PARSER -o libparse libparse_main.o utils.o ../kernel/fegetopt.o ${LDFLAGS2} -lomalloc_ndebug
+	${CXX}  ${CPPFLAGS} -DSTANDALONE_PARSER -o libparse libparse_main.o utils.o ../kernel/fegetopt.o ${LDFLAGS2} -lomalloc
 
 libparse_main.o: libparse.cc
 	${CXX} ${CPPFLAGS} -c -o libparse_main.o libparse.cc  -DSTANDALONE_PARSER
+
+utils.o: utils.cc
+	${CXX} ${CPPFLAGS} -c -o utils.o utils.cc  -DSTANDALONE_PARSER
 
 libparse.cc: libparse.l
 	@if test "x${LEX}" = x; then \
@@ -490,6 +496,8 @@ endif
 ##
 install: all installbin installslib
 
+install_all: install
+
 install-nolns: all installbin-nolns installslib-nolns
 
 installbin: ${SING_EXEC} libparse ESingular TSingular ${RUN_SINGULARS}
@@ -529,12 +537,18 @@ installslib-nolns: LIB
 	${INSTALL_DATA} `pwd`/LIB/gftables/* ${slibdir}/gftables/
 
 install-libsingular: libsingular
+	${MKINSTALLDIRS} ${includedir}/singular
 	for file in *.$(SO_SUFFIX); do \
 	  ${INSTALL_PROGRAM}  $$file ${libdir}; \
 	done
 	${INSTALL_PROGRAM} libsingular.h ${includedir}
-
-
+	${INSTALL_PROGRAM} subexpr.h ${includedir}/singular
+	${INSTALL_PROGRAM} tok.h ${includedir}/singular
+	${INSTALL_PROGRAM} grammar.h ${includedir}/singular
+	${INSTALL_PROGRAM} ipid.h ${includedir}/singular
+	${INSTALL_PROGRAM} ipshell.h ${includedir}/singular
+	${INSTALL_PROGRAM} lists.h ${includedir}/singular
+	${INSTALL_PROGRAM} attrib.h ${includedir}/singular
 
 uninstall: uninstallbin
 
@@ -791,7 +805,7 @@ installp: Singularp
 	$(CCM) ${CPPFLAGS} ${DEFSG} $< >> $@
 
 depend:   $(CXXSOURCES:.cc=.dd) $(ESOURCES:.cc=.dd) $(CSOURCES:.c=.d) mod2.h claptmpl.dd
-	-cat *.dd >>depend
+	-cat *.dd >depend
 
 ifeq (depend,$(wildcard depend))
 include depend

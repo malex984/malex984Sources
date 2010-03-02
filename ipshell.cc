@@ -14,6 +14,7 @@
 
 #include "mod2.h"
 #include "tok.h"
+#include "options.h"
 #include "ipid.h"
 #include "intvec.h"
 #include "omalloc.h"
@@ -1545,8 +1546,7 @@ void rDecomposeCF(leftv h,const ring r,const ring R)
   {
     ideal I=idInit(1,1);
     L->m[3].data=(void *)I;
-    I->m[0]=pOne();
-    pSetCoeff(I->m[0],R->minpoly);
+    I->m[0]=pNSet(R->minpoly);
   }
   // ----------------------------------------
 }
@@ -5128,7 +5128,7 @@ ideal kGroebner(ideal F, ideal Q)
     IDRING(currRingHdl)=currRing;
   }
   sleftv v; memset(&v,0,sizeof(v)); v.rtyp=IDEAL_CMD; v.data=(char *) F;
-  idhdl h=ggetid("groebner",FALSE);
+  idhdl h=ggetid("groebner");
   sleftv u; memset(&u,0,sizeof(u)); u.rtyp=IDHDL; u.data=(char *) h;
             u.name=IDID(h);
 

@@ -15,6 +15,7 @@
 #include "mod2.h"
 #include "intvec.h"
 #include "tok.h"
+#include "options.h"
 #include "ipid.h"
 #include "intvec.h"
 #include <omalloc.h>
@@ -49,13 +50,6 @@ const char sNoName[]="_";
 #ifdef SIQ
 BOOLEAN siq=FALSE;
 #endif
-
-void sleftv::Set(int val)
-{
-  Init();
-  rtyp = INT_CMD;
-  data = (void *)val;
-}
 
 int sleftv::listLength()
 {
@@ -127,13 +121,24 @@ void sleftv::Print(leftv store, int spaces)
         case MATRIX_CMD:
           iiWriteMatrix((matrix)d,n,2,spaces);
           break;
-        case MAP_CMD:
         case MODUL_CMD:
         case IDEAL_CMD:
+          if ((TEST_V_QRING)  &&(currQuotient!=NULL))
+          {
+            jjNormalizeQRingId(this);
+            d=Data();
+          }
+          // no break:
+        case MAP_CMD:
           iiWriteMatrix((matrix)d,n,1,spaces);
           break;
         case POLY_CMD:
         case VECTOR_CMD:
+          if ((TEST_V_QRING)  &&(currQuotient!=NULL))
+          {
+            jjNormalizeQRingP(this);
+            d=Data();
+          }
           PrintNSpaces(spaces);
           pWrite0((poly)d);
           break;
@@ -335,7 +340,7 @@ void sleftv::CleanUp(ring r)
         if (cmd->arg1.rtyp!=0) cmd->arg1.CleanUp();
         if (cmd->arg2.rtyp!=0) cmd->arg2.CleanUp();
         if (cmd->arg3.rtyp!=0) cmd->arg3.CleanUp();
-        omFreeBin((ADDRESS)data, ip_command_bin);
+        omFreeBin((ADDRESS)data, sip_command_bin);
         break;
       }
       case RESOLUTION_CMD:
@@ -691,7 +696,7 @@ char *  sleftv::String(void *d, BOOLEAN typed, int dim)
           {
           StringSetS((char*) (typed ? "bigint(" : ""));
           number nl=(number)d;
-          nlWrite(nl);
+          nlWrite(nl,NULL);
           s = StringAppendS((char*) (typed ? ")" : ""));
           return omStrDup(s);
           }

@@ -57,6 +57,10 @@ SOURCES = polys.cc febase.cc feread.cc \
 libkernel_la_SOURCES   = $(SOURCES)
 libkernel_g_la_SOURCES = $(SOURCES)
 
+nodist_libkernel_la_SOURCES = ${abs_top_builddir}/libpolys/polys/libpolys.la 
+nodist_libkernel_g_la_SOURCES = ${abs_top_builddir}/libpolys/polys/libpolys_g.la
+
+
 KERNELHEADERS = mod2.h polys.h hutil.h stairc.h ideals.h \
 	structs.h \
 	syz.h \

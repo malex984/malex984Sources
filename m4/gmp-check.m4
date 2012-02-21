@@ -7,7 +7,7 @@ dnl Test for the GNU Multiprecision library and define GMP_CFLAGS and GMP_LIBS
 
 AC_DEFUN([LB_CHECK_GMP],
 [
-DEFAULT_CHECKING_PATH="/usr /usr/local /sw /opt/local"
+DEFAULT_CHECKING_PATH="/usr /usr/local /sw /opt/local "
 
 AC_ARG_WITH(gmp,
 [  --with-gmp= <path>|yes Use GMP library. This library is mandatory for Singular
@@ -29,6 +29,9 @@ min_gmp_version=ifelse([$1], ,1.0,$1)
 dnl Check for existence
 BACKUP_CFLAGS=${CFLAGS}
 BACKUP_LIBS=${LIBS}
+
+echo "WARNING: CPATH: ${CPATH} LIBRARY_PATH: ${LIBRARY_PATH}"
+
 
 AC_MSG_CHECKING(for GMP >= $min_gmp_version)
 

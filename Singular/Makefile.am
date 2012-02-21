@@ -98,6 +98,7 @@ SOURCES =    Minor.cc\
 libSingular_la_SOURCES   = $(SOURCES) feOpt.inc
 libSingular_g_la_SOURCES = $(SOURCES) feOpt.inc
 
+
 SingularHEADERS =    Cache.h \
    CacheImplementation.h \
    Minor.h \

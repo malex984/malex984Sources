@@ -98,6 +98,7 @@ SOURCES =    Minor.cc\
 libSingular_la_SOURCES   = $(SOURCES) feOpt.inc
 libSingular_g_la_SOURCES = $(SOURCES) feOpt.inc
 
+
 SingularHEADERS =    Cache.h \
    CacheImplementation.h \
    Minor.h \
@@ -156,9 +157,9 @@ SingularHEADERS =    Cache.h \
    tok.h \
    walk.h 
 
-# plural_cmd.inc 
-nodist_libSingular_la_SOURCES = mpsr_Tok.inc iparith.inc
-nodist_libSingular_g_la_SOURCES = mpsr_Tok.inc iparith.inc
+# plural_cmd.inc
+nodist_libSingular_la_SOURCES = mpsr_Tok.inc iparith.inc ${abs_top_builddir}/libpolys/polys/libpolys.la ${abs_top_builddir}/kernel/libkernel.la 
+nodist_libSingular_g_la_SOURCES = mpsr_Tok.inc iparith.inc ${abs_top_builddir}/libpolys/polys/libpolys_g.la ${abs_top_builddir}/kernel/libkernel_g.la 
 
 noinst_HEADERS = version.h
 

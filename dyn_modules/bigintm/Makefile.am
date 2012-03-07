@@ -1,7 +1,9 @@
-moduledir = $(bindir)/MOD
-
 if ENABLE_P_PROCS_DYNAMIC
+  moduledir = $(bindir)/MOD
   module_LTLIBRARIES=bigintm.la bigintm_g.la 
+else
+  bigintm_LTLIBRARIES=bigintm.la bigintm_g.la
+  bigintmdir = $(libdir)/singular
 endif
 
 if ENABLE_FACTORY
@@ -39,7 +41,11 @@ bigintm_la_SOURCES   = $(SOURCES)
 bigintm_g_la_SOURCES = $(SOURCES)
 
 
-P_PROCS_CPPFLAGS_COMMON = ${PIPE} -DDYNAMIC_VERSION 
+if ENABLE_P_PROCS_DYNAMIC
+  P_PROCS_CPPFLAGS_COMMON = ${PIPE} -DDYNAMIC_VERSION 
+else
+  P_PROCS_CPPFLAGS_COMMON = ${PIPE} -DSTATIC_VERSION
+endif
 
 bigintm_la_CPPFLAGS   = ${MYINCLUDES} ${P_PROCS_CPPFLAGS_COMMON} ${NODEBUGDEFS}
 bigintm_g_la_CPPFLAGS = ${MYINCLUDES} ${P_PROCS_CPPFLAGS_COMMON}

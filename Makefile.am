@@ -5,8 +5,16 @@ if ENABLE_FACTORY
 else
   USE_FACTORY =
 endif
+
+if ENABLE_P_PROCS_DYNAMIC
+  USE_MODULES = dyn_modules
+else
+  USE_MODULES = 
+endif
+
+ALLOC = omalloc
  
-PACKAGES=findexec omalloc $(USE_FACTORY) libpolys kernel numeric Singular IntegerProgramming dyn_modules
+PACKAGES=findexec $(ALLOC) $(USE_FACTORY) libpolys kernel numeric Singular IntegerProgramming $(USE_MODULES)
 
 SUBDIRS=$(PACKAGES)
 

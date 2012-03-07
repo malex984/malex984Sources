@@ -4,7 +4,7 @@ USE_FACTORY =
 if ENABLE_FACTORY
   USE_FACTORY += factory
 endif
-
+ 
 PACKAGES=findexec omalloc $(USE_FACTORY) libpolys kernel numeric Singular IntegerProgramming gfanlib dyn_modules 
 
 SUBDIRS =$(PACKAGES)

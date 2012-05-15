@@ -41,26 +41,29 @@ for GMP_HOME in ${GMP_HOME_PATH}
 
 		if test "x$GMP_HOME" != "x/usr"; then
 			GMP_CFLAGS="-I${GMP_HOME}/include"
-			GMP_LIBS="-L${GMP_HOME}/lib -lgmp"	
+			GMP_LIBS="-Wl,-R${GMP_HOME}/lib -L${GMP_HOME}/lib -lgmp"
 		else
 			GMP_CFLAGS=
 			GMP_LIBS="-lgmp"		
 		fi
 	
-		CFLAGS="${CFLAGS} ${GMP_CFLAGS}"
-		LIBS="${LIBS} ${GMP_LIBS}"
+		CFLAGS="${BACKUP_CFLAGS} ${GMP_CFLAGS}"
+		LIBS="${BACKUP_LIBS} ${GMP_LIBS}"
 
+    # According to C. Fieker this would link but would not RUN
+    # (AC_TRY_RUN) due to missing SHARED libgmp.so :(
+    # TODO: set LD_LIBRARY_PATH???
 		AC_TRY_LINK(
 		[#include <gmp.h>],
 		[mpz_t a; mpz_init (a);],
 		[
-        		AC_TRY_RUN(
+      AC_TRY_RUN(
  			[#include <gmp.h>
 			 int main () {  if (__GNU_MP_VERSION < 3) return -1; else return 0; }
 		  	],[
 				AC_MSG_RESULT(found)
 				AC_SUBST(GMP_CFLAGS)
-		  		AC_SUBST(GMP_LIBS)
+		    AC_SUBST(GMP_LIBS)
 				AC_DEFINE(HAVE_GMP,1,[Define if GMP is installed])
 				# See if we are running GMP 4.0
 	   			AC_MSG_CHECKING(whether GMP is 4.0 or greater)

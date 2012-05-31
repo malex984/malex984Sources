@@ -38,10 +38,10 @@ AC_MSG_CHECKING(for GMP >= $min_gmp_version)
 for GMP_HOME in ${GMP_HOME_PATH} 
   do	
 	if test -r "$GMP_HOME/include/gmp.h"; then
-
+# -Wl,-R${GMP_HOME}/lib
 		if test "x$GMP_HOME" != "x/usr"; then
 			GMP_CFLAGS="-I${GMP_HOME}/include"
-			GMP_LIBS="-Wl,-R${GMP_HOME}/lib -L${GMP_HOME}/lib -lgmp"
+			GMP_LIBS="-L${GMP_HOME}/lib -lgmp"
 		else
 			GMP_CFLAGS=
 			GMP_LIBS="-lgmp"		

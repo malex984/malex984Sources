@@ -108,7 +108,7 @@ static proc Sinit(module M)
   {
     "Sinit::Input";
     type(M);
-    DetailedPrint(M);
+//    DetailedPrint(M);
     attrib(M);
   }
 
@@ -154,7 +154,7 @@ static proc Sinit(module M)
     type(M);
     attrib(M);
     attrib(M, "isHomog");
-    DetailedPrint(M);
+//    DetailedPrint(M);
   }
 
   if( @DEBUG )
@@ -471,7 +471,7 @@ proc MySort(def M)
     int @DEBUG = attrib(basering, "DEBUG");
   } else
   {
-    int @DEBUG = !system("with", "ndebug");
+    int @DEBUG = 0; // !system("with", "ndebug");
   }
 
   if( typeof( attrib(basering, "KERCHECK") ) == "int" )
@@ -887,8 +887,7 @@ proc SSComputeLeadingSyzygyTerms(def L)
   if( @DEBUG )
   {
     "SSComputeLeadingSyzygyTerms::Output: ";
-    "SS: "; 
-    SS;
+    "SS: "; SS;
   }
   
   if( size(SS) > 0 )
@@ -1097,6 +1096,18 @@ proc SSCompute2LeadingSyzygyTerms(def L)
   
   module S2 = Tail(SS);
   SS = lead(SS); // (C,lp) on base ring!
+
+  if( @SYZCHECK )
+  {
+    if( ncols(SS) != ncols(S2) ) // || size(SS) != ncols(SS) || size(S2) != ncols(S2) 
+    {
+      "ERROR: SSCompute2LeadingSyzygyTerms: inappropriate S2 / SS: ";      
+      type(SS);
+      type(S2);
+      L;
+      $
+    }
+  }  
               
   if( @DEBUG )
   {
@@ -1522,14 +1533,13 @@ proc SSComputeSyzygy(def L, def T)
     int @DEBUG = !system("with", "ndebug");
   }
 
-  if( typeof( attrib(basering, "SYZCHECK") ) == "int" )
+  if( typeof( attrib(basering, "KERCHECK") ) == "int" )
   {
-    int @SYZCHECK = attrib(basering, "SYZCHECK");
+    int @KERCHECK = attrib(basering, "KERCHECK");
   } else
   {
-    int @SYZCHECK = @DEBUG;
+    int @KERCHECK = @DEBUG; 
   }
- 
   
   if( @DEBUG )
   {

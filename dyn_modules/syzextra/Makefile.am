@@ -41,7 +41,7 @@ AMLDFLAGS = ${GOOGLE_PERFTOOL_LDFLAGS} -release ${PACKAGE_VERSION}
 # -L${top_builddir}/libpolys/polys $(USE_FACTORY) -L${top_builddir}/omalloc -L${top_builddir}/resources
 
 
-SOURCES = mod_main.cc DebugPrint.cc DebugPrint.h myNF.cc myNF.h singularxx_defs.h
+SOURCES = mod_main.cc DebugPrint.cc DebugPrint.h myNF.cc myNF.h singularxx_defs.h syzextra.cc syzextra.h
 syzextra_la_SOURCES   = $(SOURCES)
 # syzextra_g_la_SOURCES = $(SOURCES)
 

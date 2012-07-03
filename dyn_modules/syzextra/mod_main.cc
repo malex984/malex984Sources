@@ -31,6 +31,7 @@
 #include "singularxx_defs.h"
 #include "DebugPrint.h"
 #include "myNF.h"
+#include "syzextra.h"
 
 
 #if GOOGLE_PROFILE_ENABLED 
@@ -58,6 +59,7 @@ extern int rGetISPos(const int p, const ring r);
 
 USING_NAMESPACE( SINGULARXXNAME :: DEBUG )
 USING_NAMESPACE( SINGULARXXNAME :: NF )
+USING_NAMESPACE( SINGULARXXNAME :: SYZEXTRA )
 
 
 BEGIN_NAMESPACE_NONAME

@@ -658,7 +658,6 @@ static BOOLEAN _Compute2LeadingSyzygyTerms(leftv res, leftv h)
 
 
 
-/// TODO: save shortcut (syz: |-.->) LM(LM(m) * "t") -> syz?
 /// proc SSFindReducer(def product, def syzterm, def L, def T, list #)
 static BOOLEAN _FindReducer(leftv res, leftv h)
 {
@@ -862,7 +861,6 @@ static BOOLEAN _SchreyerSyzygyNF(leftv res, leftv h)
 
 
 
-/// TODO: save shortcut (syz: |-.->) LM(m) * "t" -> ?
 /// proc SSReduceTerm(poly m, def t, def syzterm, def L, def T, list #)
 static BOOLEAN _ReduceTerm(leftv res, leftv h)
 {
@@ -1007,7 +1005,6 @@ static BOOLEAN _ReduceTerm(leftv res, leftv h)
 
 
 
-// TODO: store m * @tail -.-^-.-^-.--> ?
 // proc SSTraverseTail(poly m, def @tail, def L, def T, list #)
 static BOOLEAN _TraverseTail(leftv res, leftv h)
 {
@@ -1111,8 +1108,8 @@ static BOOLEAN _TraverseTail(leftv res, leftv h)
 }
 
 
-// module (N, LL, TT) = SSComputeSyzygy(L, T);
-// Compute Syz(L ++ T) = N = LL ++ TT
+/// module (LL, TT) = SSComputeSyzygy(L, T);
+/// Compute Syz(L ++ T) = N = LL ++ TT
 // proc SSComputeSyzygy(def L, def T)
 static BOOLEAN _ComputeSyzygy(leftv res, leftv h)
 {

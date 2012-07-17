@@ -9,6 +9,8 @@
 
 #include <polys/monomials/p_polys.h>
 #include <polys/monomials/ring.h>
+#include <polys/PolyEnumerator.h>
+
 // #include <kernel/longrat.h>
 #include <kernel/kstd1.h>
 
@@ -348,8 +350,6 @@ static BOOLEAN Tail(leftv res, leftv h)
   WarnS("Tail needs a single poly/vector/ideal/module argument...");
   return TRUE;
 }
-
-
 
 static BOOLEAN _ComputeLeadingSyzygyTerms(leftv res, leftv h)
 {
@@ -1601,6 +1601,90 @@ static BOOLEAN _p_Content(leftv res, leftv h)
   return FALSE;
 }
 
+
+/// wrapper around n_ClearContent
+static BOOLEAN _ClearContent(leftv res, leftv h)
+{
+  NoReturn(res);
+
+  const char *usage = "'ClearContent' needs a (non-zero!) poly or vector argument...";
+  
+  if( h == NULL )
+  {
+    WarnS(usage);
+    return TRUE;
+  }
+
+  assume( h != NULL );
+
+  if( !( h->Typ() == POLY_CMD || h->Typ() == VECTOR_CMD) )
+  {
+    WarnS(usage);
+    return TRUE;
+  }
+
+  assume (h->Next() == NULL);
+  
+  poly p = reinterpret_cast<poly>(h->Data());
+  
+  if( p == NULL )
+  {
+    WarnS(usage);
+    return TRUE;
+  }
+  
+  const ring r =  currRing;
+  
+  number n; CPolyCoeffsEnumerator itr(p); n_ClearContent(itr, n, r->cf);
+
+  res->data = n;
+  res->rtyp = NUMBER_CMD;
+
+  return FALSE;
+}
+
+
+/// wrapper around n_ClearDenominators
+static BOOLEAN _ClearDenominators(leftv res, leftv h)
+{
+  NoReturn(res);
+
+  const char *usage = "'ClearDenominators' needs a (non-zero!) poly or vector argument...";
+
+  if( h == NULL )
+  {
+    WarnS(usage);
+    return TRUE;
+  }
+
+  assume( h != NULL );
+
+  if( !( h->Typ() == POLY_CMD || h->Typ() == VECTOR_CMD) )
+  {
+    WarnS(usage);
+    return TRUE;
+  }
+
+  assume (h->Next() == NULL);
+
+  poly p = reinterpret_cast<poly>(h->Data());
+
+  if( p == NULL )
+  {
+    WarnS(usage);
+    return TRUE;
+  }
+
+  const ring r =  currRing;
+
+  number n; CPolyCoeffsEnumerator itr(p); n_ClearDenominators(itr, n, r->cf);
+
+  res->data = n;
+  res->rtyp = NUMBER_CMD;
+
+  return FALSE;
+}
+
 END_NAMESPACE
 
 extern "C"
@@ -1645,6 +1729,10 @@ int mod_init(SModulFunctions* psModulFunctions)
     
   ADD(psModulFunctions, currPack->libname, "SchreyerSyzygyNF", FALSE, _SchreyerSyzygyNF);
   ADD(psModulFunctions, currPack->libname, "ComputeSyzygy", FALSE, _ComputeSyzygy);
+
+
+  ADD(psModulFunctions, currPack->libname, "ClearContent", FALSE, _ClearContent);
+  ADD(psModulFunctions, currPack->libname, "ClearDenominators", FALSE, _ClearDenominators);
   
 //  ADD(psModulFunctions, currPack->libname, "GetAMData", FALSE, GetAMData);
 

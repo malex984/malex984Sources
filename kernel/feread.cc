@@ -21,6 +21,7 @@
 #endif
 #include "febase.h"
 #include "omalloc.h"
+#include "options.h"
 
 #include "../Singular/static.h"
 
@@ -47,8 +48,6 @@ extern char *iiArithGetCmd(int);
 /* =                   static/dymanic readline                      = */
 /* ===================================================================*/
 #if defined(HAVE_READLINE) || defined(HAVE_DYN_RL) || defined(HAVE_LIBREADLINE)
-
-#include "../Singular/ipshell.h"
 
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1

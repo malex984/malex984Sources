@@ -8,20 +8,56 @@
 * ABSTRACT - all basic methods to manipulate ideals
 */
 #include "structs.h"
+#include "ring.h"
+
+struct sip_sideal
+{
+  poly*  m;
+  long rank;
+  int nrows;
+  int ncols;
+  #define IDELEMS(i) ((i)->ncols)
+};
+
+struct sip_smap
+{
+  poly *m;
+  char *preimage;
+  int nrows;
+  int ncols;
+};
+
+struct sideal_list;
+typedef struct sideal_list *      ideal_list;
+struct sideal_list
+{
+  ideal_list next;
+  ideal      d;
+#ifndef NDEBUG
+  int nr;
+#endif
+};
+
+//typedef struct sip_sideal *        ideal;
+//typedef struct sip_smap *          map;
+typedef ideal *            resolvente;
+
+
+extern omBin sip_sideal_bin;
 
 #ifdef PDEBUG
 ideal idDBInit (int size, int rank, const char *f, int l);
+ideal idCopyFirstK (const ideal ide, const int k);
 #define idInit(A,B) idDBInit(A,B,__FILE__,__LINE__)
 #else
 /*- creates an ideal -*/
 ideal idInit (int size, int rank=1);
+ideal idCopyFirstK (const ideal ide, const int k);
 #endif
 /*- deletes an ideal -*/
 #define idDelete(h) id_Delete(h, currRing)
 void id_Delete (ideal* h, ring r);
 void id_ShallowDelete (ideal* h, ring r);
-/* Shows an ideal -- mainly for debugging */
-void idShow(const ideal id, const ring lmRing = currRing, const ring tailRing = currRing, const int debugPrint = 0);
   /*- initialise an ideal -*/
 ideal idMaxIdeal (int deg);
   /*- initialise the maximal ideal (at 0) -*/
@@ -55,7 +91,10 @@ ideal idSimpleAdd (ideal h1,ideal h2);
   /*adds the quotient ideal*/
 ideal idAdd (ideal h1,ideal h2);
   /* h1 + h2 */
-void idInsertPoly (ideal h1,poly h2);
+BOOLEAN idInsertPoly (ideal h1,poly h2);
+  /* h1 + h2 */
+BOOLEAN idInsertPolyWithTests (ideal h1, const int validEntries,
+  const poly h2, const bool zeroOk, const bool duplicateOk);
   /* h1 + h2 */
 ideal idMult (ideal h1,ideal h2);
   /*hh := h1 * h2*/
@@ -154,7 +193,6 @@ ideal   idTransp(ideal a);
 // version of "ideal idTransp(ideal)" which works within a given ring.
 ideal id_Transp(ideal a, const ring rRing = currRing);
 
-
 intvec *idQHomWeight(ideal id);
 
 void    idNormalize(ideal id);
@@ -167,9 +205,10 @@ ideal idChineseRemainder(ideal *x, number *q, int rl);
 //ideal idChineseRemainder(ideal *x, intvec *iv); /* currently unused */
 ideal idFarey(ideal x, number N);
 
-
 ideal id_TensorModuleMult(const int m, const ideal M, const ring rRing = currRing); // image of certain map for BGG
 
-
-
+#ifndef NDEBUG
+/* Shows an ideal -- only for debugging */
+void idShow(const ideal id, const ring lmRing = currRing, const ring tailRing = currRing, const int debugPrint = 0);
+#endif
 #endif

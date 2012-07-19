@@ -185,7 +185,7 @@ BOOLEAN nrEqual (number a,number b)
   return nf(x).F() == nf((float)0.0).F();
 }
 
-void nrWrite (number &a)
+void nrWrite (number &a, const ring r)
 {
   StringAppend("%9.3e", nf(a).F());
 }
@@ -431,7 +431,7 @@ static number nrMapC(number from)
   return nf(t).N();
 }
 
-nMapFunc nrSetMap(ring src, ring dst)
+nMapFunc nrSetMap(const ring src, const ring dst)
 {
   if (rField_is_Q(src))
   {

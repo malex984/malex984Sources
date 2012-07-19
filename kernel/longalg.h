@@ -32,7 +32,6 @@ number  naPar(int i);                               /* z := par(i) */
 int     naParDeg(number n);                         /* i := deg(n) */
 int     naSize(number n);                           /* size desc. */
 int     naInt(number &n, const ring r);
-void    naNew(number *z);
 BOOLEAN naIsZero(number za);                         /* za = 0 ? */
 BOOLEAN naIsOne(number  za);                         /* za = 1 ? */
 BOOLEAN naIsMOne(number  za);                        /* za = -1 ? */
@@ -54,9 +53,9 @@ void    naNormalize(number &p);
 number  naGcd(number a, number b, const ring r);
 number  naLcm(number a, number b, const ring r);
 const char *  naRead(const char * s, number * p);
-void    naWrite(number &p);
+void    naWrite(number &p, const ring r);
 char *  naName(number n);
-nMapFunc naSetMap(ring src, ring dst);
+nMapFunc naSetMap(const ring src, const ring dst);
 number naMap0P(number c);
 number naMap00(number c);
 #ifdef LDEBUG
@@ -79,7 +78,7 @@ poly naPermNumber(number z, int * par_perm, int P, ring r);
 #define napSetm(p)             p_Setm(p,currRing->algring)
 #define nanumber               lnumber
 napoly napRemainder(napoly f, const napoly  g);
-void napWrite(napoly l,const BOOLEAN denom=TRUE);
+//void napWrite(napoly l,const BOOLEAN denom=TRUE);
 number   naGetDenom(number &n, const ring r);
 number   naGetNumerator(number &n, const ring r);
 #endif

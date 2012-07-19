@@ -52,7 +52,6 @@ number nlRInit (int i);
 LINLINE BOOLEAN  nlIsOne(number a);
 LINLINE BOOLEAN  nlIsZero(number za);
 LINLINE number   nlCopy(number a);
-LINLINE void     nlNew(number *r);
 LINLINE void     nlDelete(number *a, const ring r);
 LINLINE number   nlNeg(number za);
 LINLINE number   nlAdd(number la, number li);
@@ -79,7 +78,7 @@ number   nlIntDiv(number a, number b);
 number   nlIntMod(number a, number b);
 void     nlPower(number x, int exp, number *lu);
 const char *   nlRead (const char *s, number *a);
-void     nlWrite(number &a);
+void     nlWrite(number &a, const ring r);
 int      nlModP(number n, int p);
 int      nlSize(number n);
 number   nlGetDenom(number &n, const ring r);
@@ -90,7 +89,7 @@ BOOLEAN  nlDBTest(number a, const char *f, const int l);
 #endif
 extern number nlOne;
 
-nMapFunc nlSetMap(ring src, ring dst);
+nMapFunc nlSetMap(const ring src, const ring dst);
 #ifdef HAVE_RINGS
 number nlMapGMP(number from);
 #endif

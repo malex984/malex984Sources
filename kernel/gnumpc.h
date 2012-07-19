@@ -15,7 +15,6 @@ BOOLEAN  ngcEqual(number a, number b);
 BOOLEAN  ngcIsOne(number a);
 BOOLEAN  ngcIsMOne(number a);
 BOOLEAN  ngcIsZero(number za);
-void     ngcNew(number *r);
 number   ngcInit(int i, const ring r);
 int      ngcInt(number &n, const ring r);
 number   ngcNeg(number za);
@@ -29,7 +28,7 @@ void     ngcPower(number x, int exp, number *lu);
 number   ngcCopy(number a);
 number   ngc_Copy(number a, ring r);
 const char * ngcRead (const char *s, number *a);
-void     ngcWrite(number &a);
+void     ngcWrite(number &a, const ring r);
 number   ngcRePart(number a);
 number   ngcImPart(number a);
 
@@ -39,7 +38,7 @@ BOOLEAN  ngcDBTest(number a, const char *f, const int l);
 #endif
 void     ngcDelete(number *a, const ring r);
 
-nMapFunc  ngcSetMap(ring src, ring dst);
+nMapFunc  ngcSetMap(const ring src, const ring dst);
 
 number ngcMapQ(number from);
 #endif

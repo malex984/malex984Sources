@@ -12,7 +12,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "mod2.h"
-#include "structs.h"
+#include "options.h"
 #include "omalloc.h"
 #include "febase.h"
 #include "numbers.h"
@@ -280,6 +280,7 @@ finish:
   return s;
 }
 
+BOOLEAN _p_Test(poly p, ring r, int level);
 poly pmInit(const char *st, BOOLEAN &ok)
 {
   poly p;
@@ -294,6 +295,9 @@ poly pmInit(const char *st, BOOLEAN &ok)
     pDelete(&p);
     return NULL;
   }
+  #ifdef PDEBUG
+  _p_Test(p,currRing,PDEBUG);
+  #endif
   ok=!errorreported;
   return p;
 }
@@ -574,7 +578,7 @@ void pTakeOutComp(poly *r_p, Exponent_t comp, poly *r_q, int *lq)
   pTest(*r_q);
 }
 
-void pDecrOrdTakeOutComp(poly *r_p, Exponent_t comp, Order_t order,
+void pDecrOrdTakeOutComp(poly *r_p, Exponent_t comp, long order,
                          poly *r_q, int *lq)
 {
   spolyrec pp, qq;
@@ -716,11 +720,8 @@ void pDeleteComp(poly * p,int k)
 BOOLEAN pHasNotCF(poly p1, poly p2)
 {
 
-  if (!TEST_OPT_IDLIFT)
-  {
-    if (pGetComp(p1) > 0 || pGetComp(p2) > 0)
-      return FALSE;
-  }
+  if (pGetComp(p1) > 0 || pGetComp(p2) > 0)
+    return FALSE;
   int i = pVariables;
   loop
   {

@@ -8,11 +8,15 @@
 
 // #define PDEBUG 2
 #include "mod2.h"
+#include "options.h"
 #include "kutil.h"
 #include "numbers.h"
 #include "p_polys.h"
 #include "p_Procs.h"
 #include "gring.h"
+#ifdef KDEBUG
+#include "febase.h"
+#endif
 #ifdef HAVE_RINGS
 #include "polys.h"
 #endif
@@ -21,7 +25,7 @@
 int red_count = 0;
 int create_count = 0;
 // define this if reductions are reported on TEST_OPT_DEBUG
-// #define TEST_OPT_DEBUG_RED
+#define TEST_OPT_DEBUG_RED
 #endif
 
 /***************************************************************
@@ -474,13 +478,13 @@ x2:
     else
     {
 #ifdef HAVE_RINGS
-    if (is_Ring)
-    {
-      nDelete(&lc1);
-      nDelete(&lc2);
-      nDelete(&t1);
-      nDelete(&t2);
-    }
+      if (is_Ring)
+      {
+        nDelete(&lc1);
+        nDelete(&lc2);
+        nDelete(&t1);
+        nDelete(&t2);
+      }
 #endif
       return NULL;
     }
@@ -525,7 +529,7 @@ x1:
   }
   m1 = p_Init(currRing);
   m2 = p_Init(currRing);
-  for(;;)
+  loop
   {
     for (i = pVariables; i; i--)
     {

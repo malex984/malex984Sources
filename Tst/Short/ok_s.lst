@@ -59,7 +59,9 @@ bug_barei
 bug_barei_2
 bug_c_dp
 bug_chin
+bug_chinrem_mat
 bug_charseries
+bug_diff
 bug_factorize
 bug_homog
 bug_interpol
@@ -71,6 +73,7 @@ bug_primdec
 bug_qring
 bug_qslimgb
 bug_qslimgb1
+bug_quotient
 bug_radcon
 bug_rp
 bug_tr132

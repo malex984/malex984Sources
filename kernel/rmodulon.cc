@@ -187,16 +187,25 @@ number  nrnExtGcd (number a, number b, number *s, number *t)
 
 BOOLEAN nrnIsZero (number  a)
 {
+#ifdef LDEBUG
+  if (a == NULL) return FALSE;
+#endif
   return 0 == mpz_cmpabs_ui((int_number) a, 0);
 }
 
 BOOLEAN nrnIsOne (number a)
 {
+#ifdef LDEBUG
+  if (a == NULL) return FALSE;
+#endif
   return 0 == mpz_cmp_si((int_number) a, 1);
 }
 
 BOOLEAN nrnIsMOne (number a)
 {
+#ifdef LDEBUG
+  if (a == NULL) return FALSE;
+#endif
   return 0 == mpz_cmp((int_number) a, nrnMinusOne);
 }
 
@@ -403,7 +412,7 @@ number nrnMapQ(number from)
   return (number) erg;
 }
 
-nMapFunc nrnSetMap(ring src, ring dst)
+nMapFunc nrnSetMap(const ring src, const ring dst)
 {
   /* dst = currRing */
   if (rField_is_Ring_Z(src))
@@ -514,6 +523,7 @@ void nrnInitExp(int m, ring r)
 #ifdef LDEBUG
 BOOLEAN nrnDBTest (number a, const char *f, const int l)
 {
+  if (a==NULL) return TRUE;
   if ( (mpz_cmp_si((int_number) a, 0) < 0) || (mpz_cmp((int_number) a, currRing->nrnModul) > 0) )
   {
     return FALSE;
@@ -521,25 +531,6 @@ BOOLEAN nrnDBTest (number a, const char *f, const int l)
   return TRUE;
 }
 #endif
-
-void nrnWrite (number &a)
-{
-  char *s,*z;
-  if (a==NULL)
-  {
-    StringAppendS("o");
-  }
-  else
-  {
-    int l=mpz_sizeinbase((int_number) a, 10);
-    if (a->s<2) l=si_max(l,mpz_sizeinbase((int_number) a,10));
-    l+=2;
-    s=(char*)omAlloc(l);
-    z=mpz_get_str(s,10,(int_number) a);
-    StringAppendS(z);
-    omFreeSize((ADDRESS)s,l);
-  }
-}
 
 /*2
 * extracts a long integer from s, returns the rest    (COPY FROM longrat0.cc)

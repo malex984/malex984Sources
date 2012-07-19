@@ -204,6 +204,7 @@ extern poly pHeadProc(poly p);
 #define ppMult_mm(p, m)             pp_Mult_mm(p, m, currRing)
 #define pMult_mm(p, m)              p_Mult_mm(p, m, currRing)
 #define pAdd(p, q)                  p_Add_q(p, q, currRing)
+#define pPower(p, q)                p_Power(p, q, currRing)
 #define pMinus_mm_Mult_qq(p, m, q)  p_Minus_mm_Mult_qq(p, m, q, currRing)
 #define pPlus_mm_Mult_qq(p, m, q)   p_Plus_mm_Mult_qq(p, m, q, currRing)
 #define pMult(p, q)                 p_Mult_q(p, q, currRing)
@@ -330,7 +331,7 @@ void      ppDelete(poly * a,const ring r);
 
 /*-------------operations on polynomials:------------*/
 poly      pSub(poly a, poly b);
-poly      pPower(poly p, int i);
+poly      p_Power(poly p, int i, const ring r);
 
 // ----------------- define to enable new p_procs -----*/
 
@@ -402,7 +403,7 @@ void pTakeOutComp(poly *p, Exponent_t comp, poly *q, int *lq);
 // taken out whose Order == order
 // ASSUME: monomial ordering is Order compatible, i.e., if m1, m2 Monoms then
 //         m1 >= m2 ==> pGetOrder(m1) >= pGetOrder(m2)
-void pDecrOrdTakeOutComp(poly *p, Exponent_t comp, Order_t order,
+void pDecrOrdTakeOutComp(poly *p, Exponent_t comp, long order,
                          poly *q, int *lq);
 // This is something weird -- Don't use it, unless you know what you are doing
 poly      pTakeOutComp(poly * p, int k);

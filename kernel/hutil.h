@@ -19,7 +19,17 @@ struct monrec
   int a;
 };
 
+typedef struct sindlist indlist;
+typedef indlist * indset;
+struct sindlist
+{
+  indset nx;
+  intvec * set;
+};
+
 #define LEN_MON (sizeof(scfmon) + sizeof(int))
+
+extern struct omBin_s* indlist_bin;
 
 extern scfmon hexist, hstc, hrad, hwork;
 extern scmon hpure, hpur0;

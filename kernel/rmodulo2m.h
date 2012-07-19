@@ -37,8 +37,8 @@ BOOLEAN nr2mEqual       (number a, number b);
 number  nr2mLcm         (number a,number b, ring r);
 number  nr2mGcd         (number a,number b,ring r);
 number  nr2mExtGcd      (number a, number b, number *s, number *t);
-nMapFunc nr2mSetMap     (ring src, ring dst);
-void    nr2mWrite       (number &a);
+nMapFunc nr2mSetMap     (const ring src, const ring dst);
+void    nr2mWrite       (number &a, const ring r);
 const char *  nr2mRead  (const char *s, number *a);
 char *  nr2mName        (number n);
 #ifdef LDEBUG
@@ -51,22 +51,22 @@ void    nr2mInitExp(int c, const ring r);
 static inline number nr2mMultM(number a, number b)
 {
   return (number) 
-    ((((NATNUMBER) a)*((NATNUMBER) b)) % ((NATNUMBER) nr2mModul));
+    ((((NATNUMBER) a)*((NATNUMBER) b)) % ((NATNUMBER) currRing->nr2mModul));
 }
 
 static inline number nr2mAddM(number a, number b)
 {
   NATNUMBER r = (NATNUMBER)a + (NATNUMBER)b;
-  return (number) (r >= nr2mModul ? r - nr2mModul : r);
+  return (number) (r >= currRing->nr2mModul ? r - currRing->nr2mModul : r);
 }
 
 static inline number nr2mSubM(number a, number b)
 {
   return (number)((NATNUMBER)a<(NATNUMBER)b ?
-                       nr2mModul-(NATNUMBER)b+(NATNUMBER)a : (NATNUMBER)a-(NATNUMBER)b);
+                       currRing->nr2mModul-(NATNUMBER)b+(NATNUMBER)a : (NATNUMBER)a-(NATNUMBER)b);
 }
 
-#define nr2mNegM(A) (number)(nr2mModul-(NATNUMBER)(A))
+#define nr2mNegM(A) (number)(currRing->nr2mModul-(NATNUMBER)(A))
 #define nr2mEqualM(A,B)  ((A)==(B))
 
 number nr2mMapQ(number from);

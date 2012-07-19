@@ -69,7 +69,7 @@ static number ngfMapC(number from)
     return NULL;
 }
 
-nMapFunc ngfSetMap(ring src, ring dst)
+nMapFunc ngfSetMap(const ring src, const ring dst)
 {
   if (rField_is_Q(src))
   {
@@ -93,11 +93,6 @@ nMapFunc ngfSetMap(ring src, ring dst)
     return ngfMapC;
   }
   return NULL;
-}
-
-void ngfNew (number * r)
-{
-  *r= NULL;
 }
 
 /*2
@@ -474,7 +469,7 @@ const char * ngfRead (const char * start, number * a)
 /*2
 * write a floating point number
 */
-void ngfWrite (number &a)
+void ngfWrite (number &a, const ring r)
 {
   char *out;
   if ( a != NULL )

@@ -42,8 +42,8 @@ BOOLEAN nrnEqual       (number a, number b);
 number  nrnLcm         (number a,number b, ring r);
 number  nrnGcd         (number a,number b,ring r);
 number  nrnExtGcd      (number a, number b, number *s, number *t);
-nMapFunc nrnSetMap     (ring src, ring dst);
-void    nrnWrite       (number &a);
+nMapFunc nrnSetMap     (const ring src, const ring dst);
+#define  nrnWrite      nrzWrite
 const char *  nrnRead  (const char *s, number *a);
 char *  nrnName        (number n);
 #ifdef LDEBUG

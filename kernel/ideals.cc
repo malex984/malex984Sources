@@ -15,7 +15,7 @@
 # define MYTEST 0
 #endif /* ifndef NDEBUG */
 
-#include "structs.h"
+#include "options.h"
 #include "omalloc.h"
 #include "febase.h"
 #include "numbers.h"
@@ -31,8 +31,7 @@
 #include "ideals.h"
 #include "prCopy.h"
 
-
-
+omBin sip_sideal_bin = omGetSpecBin(sizeof(sip_sideal));
 
 /* #define WITH_OLD_MINOR */
 #define pCopy_noCheck(p) pCopy(p)
@@ -69,7 +68,7 @@ ideal idInit(int idsize, int rank)
   return hh;
 }
 
-#ifndef __OPTIMIZE__
+#ifndef NDEBUG
 // this is only for outputting an ideal within the debugger
 void idShow(const ideal id, const ring lmRing, const ring tailRing, const int debugPrint)
 {
@@ -190,6 +189,19 @@ void idSkipZeroes (ideal ide)
     pEnlargeSet(&(ide->m),IDELEMS(ide),j+1-IDELEMS(ide));
     IDELEMS(ide) = j+1;
   }
+}
+
+/*2
+* copies the first k (>= 1) entries of the given ideal
+* and returns these as a new ideal
+* (Note that the copied polynomials may be zero.)
+*/
+ideal idCopyFirstK (const ideal ide, const int k)
+{
+  ideal newI = idInit(k, 0);
+  for (int i = 0; i < k; i++)
+    newI->m[i] = pCopy(ide->m[i]);
+  return newI;
 }
 
 /*2
@@ -540,11 +552,12 @@ ideal idSimpleAdd (ideal h1,ideal h2)
 }
 
 /*2
-* concat h1 and h2
+* insert h2 into h1 (if h2 is not the zero polynomial)
+* return TRUE iff h2 was indeed inserted
 */
-void idInsertPoly (ideal h1,poly h2)
+BOOLEAN idInsertPoly (ideal h1, poly h2)
 {
-  if (h2==NULL) return;
+  if (h2==NULL) return FALSE;
   int j = IDELEMS(h1)-1;
   while ((j >= 0) && (h1->m[j] == NULL)) j--;
   j++;
@@ -554,6 +567,38 @@ void idInsertPoly (ideal h1,poly h2)
     IDELEMS(h1)+=16;
   }
   h1->m[j]=h2;
+  return TRUE;
+}
+
+/*2
+* insert h2 into h1 depending on the two boolean parameters:
+* - if zeroOk is true, then h2 will also be inserted when it is zero
+* - if duplicateOk is true, then h2 will also be inserted when it is
+*   already present in h1
+* return TRUE iff h2 was indeed inserted
+*/
+BOOLEAN idInsertPolyWithTests (ideal h1, const int validEntries,
+  const poly h2, const bool zeroOk, const bool duplicateOk)
+{
+  if ((!zeroOk) && (h2 == NULL)) return FALSE;
+  if (!duplicateOk)
+  {
+    bool h2FoundInH1 = false;
+    int i = 0;
+    while ((i < validEntries) && (!h2FoundInH1))
+    {
+      h2FoundInH1 = pEqualPolys(h1->m[i], h2);
+      i++;
+    }
+    if (h2FoundInH1) return FALSE;
+  }
+  if (validEntries == IDELEMS(h1))
+  {
+    pEnlargeSet(&(h1->m), IDELEMS(h1), 16);
+    IDELEMS(h1) += 16;
+  }
+  h1->m[validEntries] = h2;
+  return TRUE;
 }
 
 /*2
@@ -1645,11 +1690,15 @@ ideal idLiftStd (ideal  h1, matrix* ma, tHomog hi, ideal * syz)
   if (w!=NULL) delete w;
   i = 0;
 
+  // now sort the result, SB : leave in s_h3
+  //                      T:  put in s_h2
+  //                      syz: put in *syz
   for (j=0; j<IDELEMS(s_h3); j++)
   {
     if (s_h3->m[j] != NULL)
     {
-      if (p_MinComp(s_h3->m[j],syz_ring) <= k)
+      //if (p_MinComp(s_h3->m[j],syz_ring) <= k)
+      if (pGetComp(s_h3->m[j]) <= k) // syz_ring == currRing
       {
         i++;
         q = s_h3->m[j];
@@ -1669,6 +1718,7 @@ ideal idLiftStd (ideal  h1, matrix* ma, tHomog hi, ideal * syz)
       }
       else
       {
+        // we a syzygy here:
         if (lift3)
         {
           pShift(&s_h3->m[j], -k);
@@ -1680,8 +1730,15 @@ ideal idLiftStd (ideal  h1, matrix* ma, tHomog hi, ideal * syz)
       }
     }
   }
-
   idSkipZeroes(s_h3);
+  //extern char * iiStringMatrix(matrix im, int dim,char ch);
+  //PrintS("SB: ----------------------------------------\n");
+  //PrintS(iiStringMatrix((matrix)s_h3,k,'\n'));
+  //PrintLn();
+  //PrintS("T: ----------------------------------------\n");
+  //PrintS(iiStringMatrix((matrix)s_h2,h1->rank,'\n'));
+  //PrintLn();
+
   if (lift3) idSkipZeroes(*syz);
 
   j = IDELEMS(s_h1);
@@ -2060,7 +2117,7 @@ static ideal idInitializeQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb,
 
   intvec * weights;
   hom = (tHomog)idHomModule(h1,currQuotient,&weights);
-  if (addOnlyOne && (!h1IsStb))
+  if (/**addOnlyOne &&*/ (!h1IsStb))
     temph1 = kStd(h1,currQuotient,hom,&weights,NULL);
   else
     temph1 = idCopy(h1);
@@ -2100,15 +2157,17 @@ static ideal idInitializeQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb,
     }
     for (i=1; i<k; i++)
     {
-      p = pCopy_noCheck(h4->m[i-1]);
-      pShift(&p,1);
-      h4->m[i] = p;
+      if (h4->m[i-1]!=NULL)
+      {
+        p = pCopy_noCheck(h4->m[i-1]);
+        pShift(&p,1);
+        h4->m[i] = p;
+      }
     }
   }
-
+  idSkipZeroes(h4);
   kkk = IDELEMS(h4);
   i = IDELEMS(temph1);
-  while ((i>0) && (temph1->m[i-1]==NULL)) i--;
   for (l=0; l<i; l++)
   {
     if(temph1->m[l]!=NULL)
@@ -2133,13 +2192,13 @@ static ideal idInitializeQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb,
 /*--- if h2 goes in as single vector - the h1-part is just SB ---*/
   if (*addOnlyOne)
   {
+    idSkipZeroes(h4);
     p = h4->m[0];
     for (i=0;i<IDELEMS(h4)-1;i++)
     {
       h4->m[i] = h4->m[i+1];
     }
     h4->m[IDELEMS(h4)-1] = p;
-    idSkipZeroes(h4);
     test |= Sy_bit(OPT_SB_1);
   }
   idDelete(&temph1);
@@ -2164,7 +2223,6 @@ ideal idQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb, BOOLEAN resultIsIdeal)
     return res;
   }
   BITSET old_test=test;
-  poly     p,q = NULL;
   int i,l,ll,k,kkk,kmax;
   BOOLEAN  addOnlyOne=TRUE;
   tHomog   hom=isNotHomog;
@@ -2181,19 +2239,35 @@ ideal idQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb, BOOLEAN resultIsIdeal)
   //  s_h4 = idrMoveR_NoSort(s_h4,orig_ring);
     s_h4 = idrMoveR(s_h4,orig_ring);
   idTest(s_h4);
+  #if 0
+  void ipPrint_MA0(matrix m, const char *name);
+  matrix m=idModule2Matrix(idCopy(s_h4));
+  PrintS("start:\n");
+  ipPrint_MA0(m,"Q");
+  idDelete((ideal *)&m);
+  PrintS("last elem:");wrp(s_h4->m[IDELEMS(s_h4)-1]);PrintLn();
+  #endif
   ideal s_h3;
   if (addOnlyOne)
   {
-    s_h3 = kStd(s_h4,currQuotient,hom,&weights1,NULL,kmax-1,IDELEMS(s_h4)-1);
+    s_h3 = kStd(s_h4,currQuotient,hom,&weights1,NULL,0/*kmax-1*/,IDELEMS(s_h4)-1);
   }
   else
   {
     s_h3 = kStd(s_h4,currQuotient,hom,&weights1,NULL,kmax-1);
   }
+  test = old_test;
+  #if 0
+  // only together with the above debug stuff
+  idSkipZeroes(s_h3);
+  m=idModule2Matrix(idCopy(s_h3));
+  Print("result, kmax=%d:\n",kmax);
+  ipPrint_MA0(m,"S");
+  idDelete((ideal *)&m);
+  #endif
   idTest(s_h3);
   if (weights1!=NULL) delete weights1;
   idDelete(&s_h4);
-
 
   for (i=0;i<IDELEMS(s_h3);i++)
   {
@@ -2213,13 +2287,11 @@ ideal idQuot (ideal  h1, ideal h2, BOOLEAN h1IsStb, BOOLEAN resultIsIdeal)
     s_h3->rank = h1->rank;
   if(syz_ring!=orig_ring)
   {
-//    pDelete(&q);
     rChangeCurrRing(orig_ring);
     s_h3 = idrMoveR_NoSort(s_h3, syz_ring);
     rKill(syz_ring);
   }
   idSkipZeroes(s_h3);
-  test = old_test;
   idTest(s_h3);
   return s_h3;
 }
@@ -3944,11 +4016,14 @@ poly id_GCD(poly f, poly g, const ring r)
 */
 ideal idChineseRemainder(ideal *xx, number *q, int rl)
 {
-  ideal result=idInit(IDELEMS(xx[0]),xx[0]->rank);
+  int cnt=IDELEMS(xx[0])*xx[0]->nrows;
+  ideal result=idInit(cnt,xx[0]->rank);
+  result->nrows=xx[0]->nrows; // for lifting matrices
+  result->ncols=xx[0]->ncols; // for lifting matrices
   int i,j;
   poly r,h,hh,res_p;
   number *x=(number *)omAlloc(rl*sizeof(number));
-  for(i=IDELEMS(result)-1;i>=0;i--)
+  for(i=cnt-1;i>=0;i--)
   {
     res_p=NULL;
     loop
@@ -4009,9 +4084,13 @@ ideal idChineseRemainder(ideal *xx, intvec *iv)
  */
 ideal idFarey(ideal x, number N)
 {
-  ideal result=idInit(IDELEMS(x),x->rank);
+  int cnt=IDELEMS(x)*x->nrows;
+  ideal result=idInit(cnt,x->rank);
+  result->nrows=x->nrows; // for lifting matrices
+  result->ncols=x->ncols; // for lifting matrices
+
   int i;
-  for(i=IDELEMS(result)-1;i>=0;i--)
+  for(i=cnt-1;i>=0;i--)
   {
     poly h=pCopy(x->m[i]);
     result->m[i]=h;
@@ -4021,6 +4100,19 @@ ideal idFarey(ideal x, number N)
       pSetCoeff0(h,nlFarey(c,N));
       nDelete(&c);
       pIter(h);
+    }
+    while((result->m[i]!=NULL)&&(nIsZero(pGetCoeff(result->m[i]))))
+    {
+      pLmDelete(&(result->m[i]));
+    }
+    h=result->m[i];
+    while((h!=NULL) && (pNext(h)!=NULL))
+    {
+      if(nIsZero(pGetCoeff(pNext(h))))
+      {
+        pLmDelete(&pNext(h));
+      }
+      else pIter(h);
     }
   }
   return result;

@@ -40,7 +40,7 @@ number  npNeg         (number c);
 number  npInvers      (number c);
 BOOLEAN npGreater     (number a, number b);
 BOOLEAN npEqual       (number a, number b);
-void    npWrite       (number &a);
+void    npWrite       (number &a, const ring r);
 const char *  npRead  (const char *s, number *a);
 #ifdef LDEBUG
 BOOLEAN npDBTest      (number a, const char *f, const int l);
@@ -53,18 +53,18 @@ void    npInitChar(int c, ring r);
 
 //int     npGetChar();
 
-nMapFunc npSetMap(ring src, ring dst);
+nMapFunc npSetMap(const ring src, const ring dst);
 number  npMapP(number from);
 number  npMap0(number from);
 /*-------specials for spolys, do NOT use otherwise--------------------------*/
 /* for npMultM, npSubM, npNegM, npEqualM : */
 #ifdef HAVE_DIV_MOD
-extern CARDINAL *npInvTable;
+extern unsigned short *npInvTable;
 #else
 #ifndef HAVE_MULT_MOD
 extern long npPminus1M;
-extern CARDINAL *npExpTable;
-extern CARDINAL *npLogTable;
+extern unsigned short *npExpTable;
+extern unsigned short *npLogTable;
 #endif
 #endif
 

@@ -21,7 +21,7 @@
 
 
 #include <mylimits.h>
-#include "structs.h"
+#include "options.h"
 #include "gring.h"
 #include "sca.h"
 #ifdef KDEBUG
@@ -214,7 +214,6 @@ static inline int pDivComp(poly p, poly q)
 }
 
 
-BITSET  test=(BITSET)0;
 int     HCord;
 int     Kstd1_deg;
 int     mu=32000;
@@ -694,7 +693,8 @@ BOOLEAN kTest_T(TObject * T, ring strat_tailRing, int i, char TN)
     pFalseReturn(p_Test(T->p, currRing));
   }
 
-  if (i >= 0 && T->pLength != 0 && T->pLength != pLength(p))
+  if (i >= 0 && T->pLength != 0 
+  && ! rIsSyzIndexRing(currRing) && T->pLength != pLength(p))
   {
     int l=T->pLength;
     T->pLength=pLength(p);
@@ -1311,6 +1311,8 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int ecart, int isFromQ,kStrategy strat,
   }
 
   k_GetStrongLeadTerms(p, strat->S[i], currRing, m1, m2, gcd, strat->tailRing);
+  //p_Test(m1,strat->tailRing);
+  //p_Test(m2,strat->tailRing);
   while (! kCheckStrongCreation(atR, m1, i, m2, strat) )
   {
     memset(&(strat->P), 0, sizeof(strat->P));
@@ -1324,6 +1326,8 @@ BOOLEAN enterOneStrongPoly (int i,poly p,int ecart, int isFromQ,kStrategy strat,
   pSetCoeff0(m1, s);
   pSetCoeff0(m2, t);
   pSetCoeff0(gcd, d);
+  p_Test(m1,strat->tailRing);
+  p_Test(m2,strat->tailRing);
 
 #ifdef KDEBUG
   if (TEST_OPT_DEBUG)
@@ -2912,7 +2916,7 @@ ideal createG0()
 */
 void initenterstrongPairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, int atR = -1)
 {
-
+  const int iCompH = pGetComp(h);
   if (!nIsOne(pGetCoeff(h)))
   {
     int j;
@@ -2923,9 +2927,12 @@ void initenterstrongPairs (poly h,int k,int ecart,int isFromQ,kStrategy strat, i
       // Print("j:%d, Ll:%d\n",j,strat->Ll);
 //      if (((unsigned long) pGetCoeff(h) % (unsigned long) pGetCoeff(strat->S[j]) != 0) &&
 //         ((unsigned long) pGetCoeff(strat->S[j]) % (unsigned long) pGetCoeff(h) != 0))
+      if ( iCompH == pGetComp(strat->S[k]) )
       {
-        if (enterOneStrongPoly(j,h,ecart,isFromQ,strat, atR))
-          new_pair=TRUE;
+        {
+          if (enterOneStrongPoly(j,h,ecart,isFromQ,strat, atR))
+            new_pair=TRUE;
+        }
       }
     }
   }
@@ -2960,6 +2967,7 @@ void enterExtendedSpoly(poly h,kStrategy strat)
       gcd = nIntDiv(0, gcd);
       nDelete(&tmp);
     }
+    p_Test(p,strat->tailRing);
     p = pp_Mult_nn(p, gcd, strat->tailRing);
     nDelete(&gcd);
 
@@ -2973,22 +2981,25 @@ void enterExtendedSpoly(poly h,kStrategy strat)
       if (TEST_OPT_DEBUG)
       {
         PrintS("--- create zero spoly: ");
-        wrp(h);
+        p_wrp(h,currRing,strat->tailRing);
         PrintS(" ---> ");
       }
 #endif
       poly tmp = pInit();
       pSetCoeff0(tmp, pGetCoeff(p));
-      for (int i = 1; i <= currRing->N; i++)
+      for (int i = 1; i <= rVar(currRing); i++)
       {
         pSetExp(tmp, i, p_GetExp(p, i, strat->tailRing));
       }
-      if (rRing_has_Comp(currRing))
+      if (rRing_has_Comp(currRing) && rRing_has_Comp(strat->tailRing))
+      {
         p_SetComp(tmp, p_GetComp(p, strat->tailRing), currRing);
+      }
       p_Setm(tmp, currRing);
       p = p_LmFreeAndNext(p, strat->tailRing);
       pNext(tmp) = p;
       LObject h;
+      h.Init();
       h.p = tmp;
       h.tailRing = strat->tailRing;
       int posx;
@@ -3010,19 +3021,13 @@ void enterExtendedSpoly(poly h,kStrategy strat)
           posx = strat->posInL(strat->L,strat->Ll,&h,strat);
         h.sev = pGetShortExpVector(h.p);
         if (strat->tailRing != currRing)
-          h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
-        if (pNext(p) != NULL)
         {
-          // What does this? (Oliver)
-          // pShallowCopyDeleteProc p_shallow_copy_delete
-          //      = pGetShallowCopyDeleteProc(strat->tailRing, new_tailRing);
-          // pNext(p) = p_shallow_copy_delete(pNext(p),
-          //              currRing, strat->tailRing, strat->tailRing->PolyBin);
+          h.t_p = k_LmInit_currRing_2_tailRing(h.p, strat->tailRing);
         }
 #ifdef KDEBUG
         if (TEST_OPT_DEBUG)
         {
-          wrp(tmp);
+          p_wrp(tmp,currRing,strat->tailRing);
           PrintLn();
         }
 #endif
@@ -4663,7 +4668,7 @@ poly redtailBba_Z (LObject* L, int pos, kStrategy strat )
         mm=pNeg(mm);
         if (Ln.bucket!=NULL)
         {
-	  int dummy=1;
+          int dummy=1;
           kBucket_Add_q(Ln.bucket,mm,&dummy);
         }
         else
@@ -5641,7 +5646,7 @@ void enterT(LObject p, kStrategy strat, int atT)
   assume(strat->tailRing == p.tailRing);
   // redMoraNF complains about this -- but, we don't really
   // neeed this so far
-  assume(p.pLength == 0 || pLength(p.p) == p.pLength);
+  assume(p.pLength == 0 || pLength(p.p) == p.pLength || rIsSyzIndexRing(currRing)); // modulo syzring
   assume(p.FDeg == p.pFDeg());
   assume(!p.is_normalized || nIsOne(pGetCoeff(p.p)));
 
@@ -5983,8 +5988,9 @@ void updateResult(ideal r,ideal Q, kStrategy strat)
     for (l=IDELEMS(r)-1;l>=0;l--)
     {
       if ((r->m[l]!=NULL)
-      && (strat->syzComp>0)
-      && (pGetComp(r->m[l])<=strat->syzComp))
+      //&& (strat->syzComp>0)
+      //&& (pGetComp(r->m[l])<=strat->syzComp)
+      )
       {
         for(q=IDELEMS(Q)-1; q>=0;q--)
         {
@@ -6636,7 +6642,35 @@ void kDebugPrint(kStrategy strat)
          strat->honey,strat->sugarCrit,strat->Gebauer,strat->noTailReduction,strat->use_buckets);
   Print("posInLDependsOnLength=%d, use_buckets=%d\n",
          strat->posInLDependsOnLength,strat->use_buckets);
-   PrintS(showOption());PrintLn();
+  PrintS(showOption());PrintLn();
+  PrintS("LDeg: ");
+    if (currRing->pLDeg==pLDeg0) PrintS("pLDeg0");
+    else if (currRing->pLDeg==pLDeg0c) PrintS("pLDeg0c");
+    else if (currRing->pLDeg==pLDegb) PrintS("pLDegb");
+    else if (currRing->pLDeg==pLDeg1) PrintS("pLDeg1");
+    else if (currRing->pLDeg==pLDeg1c) PrintS("pLDeg1c");
+    else if (currRing->pLDeg==pLDeg1_Deg) PrintS("pLDeg1_Deg");
+    else if (currRing->pLDeg==pLDeg1c_Deg) PrintS("pLDeg1c_Deg");
+    else if (currRing->pLDeg==pLDeg1_Totaldegree) PrintS("pLDeg1_Totaldegree");
+    else if (currRing->pLDeg==pLDeg1c_Totaldegree) PrintS("pLDeg1c_Totaldegree");
+    else if (currRing->pLDeg==pLDeg1_WFirstTotalDegree) PrintS("pLDeg1_WFirstTotalDegree");
+    else if (currRing->pLDeg==pLDeg1c_WFirstTotalDegree) PrintS("pLDeg1c_WFirstTotalDegree");
+    else Print("? (%lx)", (long)currRing->pLDeg);
+    PrintS(" / ");
+    if (strat->tailRing->pLDeg==pLDeg0) PrintS("pLDeg0");
+    else if (strat->tailRing->pLDeg==pLDeg0c) PrintS("pLDeg0c");
+    else if (strat->tailRing->pLDeg==pLDegb) PrintS("pLDegb");
+    else if (strat->tailRing->pLDeg==pLDeg1) PrintS("pLDeg1");
+    else if (strat->tailRing->pLDeg==pLDeg1c) PrintS("pLDeg1c");
+    else if (strat->tailRing->pLDeg==pLDeg1_Deg) PrintS("pLDeg1_Deg");
+    else if (strat->tailRing->pLDeg==pLDeg1c_Deg) PrintS("pLDeg1c_Deg");
+    else if (strat->tailRing->pLDeg==pLDeg1_Totaldegree) PrintS("pLDeg1_Totaldegree");
+    else if (strat->tailRing->pLDeg==pLDeg1c_Totaldegree) PrintS("pLDeg1c_Totaldegree");
+    else if (strat->tailRing->pLDeg==pLDeg1_WFirstTotalDegree) PrintS("pLDeg1_WFirstTotalDegree");
+    else if (strat->tailRing->pLDeg==pLDeg1c_WFirstTotalDegree) PrintS("pLDeg1c_WFirstTotalDegree");
+    else Print("? (%lx)", (long)strat->tailRing->pLDeg);
+    Print(" syzring:%d, syzComp(strat):%d syzComb(ring)\n",rIsSyzIndexRing(currRing),strat->syzComp,rGetCurrSyzLimit());
+
 }
 
 

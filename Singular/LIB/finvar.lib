@@ -3,8 +3,8 @@ version="$Id$"
 category="Invariant theory";
 info="
 LIBRARY:  finvar.lib    Invariant Rings of Finite Groups
-AUTHOR: Agnes E. Heydtmann, contact via Wolfram Decker: decker@math.uni-sb.de
-        Simon A. King, email: simon.king@uni-jena.de
+AUTHOR: Agnes E. Heydtmann, contact via Wolfram Decker: decker@mathematik.uni-kl.de
+        Simon A. King, email: simon.king@nuigalway.ie
 OVERVIEW:
  A library for computing polynomial invariants of finite matrix groups and
  generators of related varieties. The algorithms are based on B. Sturmfels,
@@ -7767,7 +7767,7 @@ EXAMPLE:  example rel_orbit_variety; shows an example.
     vars=vars,y(1..m);
     map emb=newring,vars;
     ideal G=emb(J);
-    J=J-G;
+    J=matrix(J)-G;
     for (i=1;i<=ncols(G);i++)
     { if (J[i]<>0)
       { G[i]=0;
@@ -7868,7 +7868,7 @@ EXAMPLE: example relative_orbit_variety; shows an example
     vars=vars,y(1..m);
     map emb=R,vars;
     ideal G=emb(J);
-    J=J-G;
+    J=matrix(J)-G;
     for (i=1;i<=ncols(G);i++)
     { if (J[i]<>0)
       { G[i]=0;

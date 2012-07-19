@@ -8,19 +8,16 @@
 * ABSTRACT
 */
 
-#include <string.h> /* for memset */
+/* for memset: */
+#include <string.h>
 #ifdef HAVE_RINGS
 #include <si_gmp.h>
 #endif
 
-#ifndef NATNUMBER
-#define NATNUMBER unsigned long
-#endif
 
 /* standard types */
-typedef unsigned char  uchar;
-typedef unsigned short CARDINAL;
 #ifdef HAVE_RINGS
+typedef unsigned long NATNUMBER;
 typedef MP_INT *int_number;
 #endif
 #if (SIZEOF_LONG == 8)
@@ -35,12 +32,6 @@ typedef short BOOLEAN;
 typedef void * Sy_reference;
 #define ADDRESS Sy_reference
 #define BITSET  unsigned int
-
-/* EXPONENT_TYPE is determined by configure und defined in mod2.h */
-/* the following defines should really go into mod2.h,
-   but configure dislikes it */
-
-#define HAVE_IDI 1
 
 #if defined(SI_CPU_I386) || defined(SI_CPU_X86_64)
   // the following settings seems to be better on i386 and x86_64 processors
@@ -82,23 +73,12 @@ typedef long int64;
 
 
 typedef long Exponent_t;
-typedef long Order_t;
 
 enum tHomog
 {
    isNotHomog = FALSE,
    isHomog    = TRUE,
    testHomog
-};
-enum noeof_t
-{
-  noeof_brace = 1,
-  noeof_asstring,
-  noeof_block,
-  noeof_bracket,
-  noeof_comment,
-  noeof_procname,
-  noeof_string
 };
 
 enum n_coeffType
@@ -112,6 +92,12 @@ enum n_coeffType
   n_Zp_a,
   n_Q_a,
   n_long_C
+#ifdef HAVE_RINGS
+  ,n_Z,
+  n_Zm,
+  n_Zpn,
+  n_Z2n
+#endif
 };
 
 // #ifdef HAVE_PLURAL
@@ -130,6 +116,11 @@ enum nc_type
 
 typedef enum { LT_NONE, LT_NOTFOUND, LT_SINGULAR, LT_ELF, LT_HPUX, LT_MACH_O} lib_types;
 
+struct snumber;
+typedef struct snumber *   number;
+typedef number (*numberfunc)(number a,number b);
+typedef number (*nMapFunc)(number a);
+
 /* C++-part */
 #ifdef __cplusplus
 class ip_smatrix;
@@ -141,7 +132,6 @@ class sattr;
 class skStrategy;
 class ssyStrategy;
 class procinfo;
-class namerec;
 class kBucket;
 class sBucket;
 class CPolynomialSummator;
@@ -151,15 +141,20 @@ class CFormulaPowerMultiplier;
 
 struct n_Procs_s;
 struct sip_sring;
-struct sip_sideal;
 struct sip_link;
 struct spolynom;
 struct _ssubexpr;
 struct _sssym;
-struct snumber;
 struct sip_command;
 struct sip_package;
 struct s_si_link_extension;
+
+// forward for ideals.h:
+struct sip_sideal;
+struct sip_smap;
+typedef struct sip_smap *         map;
+typedef struct sip_sideal *       ideal;
+
 
 typedef struct  n_Procs_s  n_Procs_s;
 
@@ -171,8 +166,6 @@ typedef struct nc_struct   nc_struct;
 typedef struct _ssubexpr   sSubexpr;
 typedef struct _sssym      ssym;
 typedef struct spolyrec    polyrec;
-typedef struct sip_sideal  ip_sideal;
-typedef struct sip_smap    ip_smap;
 typedef struct sip_sring   ip_sring;
 typedef struct sip_link    ip_link;
 typedef struct sip_command ip_command;
@@ -182,16 +175,10 @@ typedef struct sip_package ip_package;
 typedef char *             char_ptr;
 typedef int  *             int_ptr;
 typedef short *            short_ptr;
-typedef void *             void_ptr;
 typedef ip_sring *         ring;
 typedef int                idtyp;
-typedef struct snumber *   number;
 typedef polyrec *          poly;
 typedef poly *             polyset;
-typedef ip_sideal *        ideal;
-typedef ip_smap *          map;
-typedef struct sideal_list *      ideal_list;
-typedef ideal *            resolvente;
 typedef union uutypes      utypes;
 typedef ip_command *       command;
 typedef struct s_si_link_extension *si_link_extension;
@@ -209,28 +196,9 @@ typedef skStrategy *       kStrategy;
 typedef ip_package *       package;
 typedef ssyStrategy *      syStrategy;
 typedef procinfo *         procinfov;
-typedef namerec *          namehdl;
 typedef kBucket*           kBucket_pt;
 typedef sBucket*           sBucket_pt;
 typedef struct p_Procs_s p_Procs_s;
-
-// for hdegree.cc
-typedef struct sindlist indlist;
-typedef indlist * indset;
-struct sindlist
-{
-  indset nx;
-  intvec * set;
-};
-
-// for longalg.cc
-struct snaIdeal
-{
-  int anz;
-  napoly *liste;
-};
-typedef struct snaIdeal * naIdeal;
-
 
 // for sparsemat.cc
 typedef struct smprec sm_prec;
@@ -244,17 +212,6 @@ struct smprec
   float f;             // complexity of the element
 };
 
-struct _scmdnames
-{
-  char *name;
-  short alias;
-  short tokval;
-  short toktype;
-};
-typedef struct _scmdnames cmdnames;
-
-typedef number (*numberfunc)(number a,number b);
-typedef number (*nMapFunc)(number a);
 struct n_Procs_s
 {
    n_Procs_s* next;
@@ -263,17 +220,16 @@ struct n_Procs_s
    int npPrimeM;
    int npPminus1M;
    #ifdef HAVE_DIV_MOD
-   CARDINAL *npInvTable;
+   unsigned short *npInvTable;
    #endif
    #if !defined(HAVE_DIV_MOD) || !defined(HAVE_MULT_MOD)
-   CARDINAL *npExpTable;
-   CARDINAL *npLogTable;
+   unsigned short *npExpTable;
+   unsigned short *npLogTable;
    #endif
    // Zp_a, Q_a
 
    // general stuff
    numberfunc nMult, nSub ,nAdd ,nDiv, nIntDiv, nIntMod, nExactDiv;
-   void    (*nNew)(number * a);
    number  (*cfInit)(int i,const ring r);
    number  (*nPar)(int i);
    int     (*nParDeg)(number n);
@@ -291,7 +247,7 @@ struct n_Procs_s
    number  (*cfCopy)(number a, const ring r);
    number  (*nRePart)(number a);
    number  (*nImPart)(number a);
-   void    (*nWrite)(number &a);
+   void    (*cfWrite)(number &a, const ring r);
    const char *  (*nRead)(const char * s, number * a);
    void    (*nNormalize)(number &a);
    BOOLEAN (*nGreater)(number a,number b),
@@ -309,31 +265,19 @@ struct n_Procs_s
    number  (*nGcd)(number a, number b, const ring r);
    number  (*nLcm)(number a, number b, const ring r);
    void    (*cfDelete)(number * a, const ring r);
-   nMapFunc (*cfSetMap)(ring src, ring dst);
+   nMapFunc (*cfSetMap)(const ring src, const ring dst);
    char *  (*nName)(number n);
    void    (*nInpMult)(number &a, number b, ring r);
 #ifdef LDEBUG
    BOOLEAN (*nDBTest)(number a, const char *f,const int l);
 #endif
-//extern number  (*nMap)(number from);
 
    number nNULL; /* the 0 as constant */
    int     char_flag;
    int     ref;
-   short   nChar;
    n_coeffType type;
+   short   nChar;
 };
-/* current ring stuff */
-
-extern ring      currRing;
-extern ideal     currQuotient;
-extern idhdl      currRingHdl;
-
-extern idhdl currPackHdl;
-extern idhdl basePackHdl;
-extern package currPack;
-extern package basePack;
-#define IDROOT (currPack->idroot)
 
 /* the function pointer types */
 
@@ -523,8 +467,10 @@ struct nc_struct
   private:
     // internal data for different implementations
     // if dynamic => must be deallocated in destructor (nc_rKill!)
-    union {
-      struct {
+    union
+    {
+      struct
+      {
         // treat variables from iAltVarsStart till iAltVarsEnd as alternating vars.
         // these variables should have odd degree, though that will not be checked
         // iAltVarsStart, iAltVarsEnd are only used together with nc_type=nc_exterior
@@ -535,7 +481,6 @@ struct nc_struct
         // the part of general quotient ideal modulo squares!    
         ideal idSCAQuotient; // = NULL by default. // must be deleted in Kill!
       } sca;
-
     } data;
 
     CGlobalMultiplier* m_Multiplier;
@@ -577,22 +522,6 @@ struct nc_struct
 
 };
 #endif
-#if 0
-struct nc_struct
-{
-  short ref;
-  nc_type type;
-  ring basering; // the ring C,D,.. live in
-  matrix C;
-  matrix D;
-  matrix *MT;
-  matrix COM;
-  int *MTsize;
-  int IsSkewConstant; /* indicates whethere coeffs C_ij are all equal */
-  /* effective together with nc_type=nc_skew */
-};
-#endif
-
 
 struct sip_sring
 {
@@ -624,14 +553,14 @@ struct sip_sring
 
   ideal      qideal; /* extension to the ring structure: qring, rInit */
 
-
   int*     firstwv;
 
   struct omBin_s*   PolyBin; /* Bin from where monoms are allocated */
 #ifdef HAVE_RINGS
   unsigned int  ringtype;  /* cring = 0 => coefficient field, cring = 1 => coeffs from Z/2^m */
-  int_number    ringflaga; /* Z/(ringfalga^ringflagb)=Z/nrnModul*/
+  int_number    ringflaga; /* Z/(ringflag^ringflagb)=Z/nrnModul*/
   unsigned long ringflagb;
+  unsigned long nr2mModul;  /* Z/nr2mModul */
   int_number    nrnModul;
 #endif
   unsigned long options; /* ring dependent options */
@@ -664,7 +593,6 @@ struct sip_sring
 
   BOOLEAN   ComponentOrder; // ???
 
-
   // what follows below here should be set by rComplete, _only_
   // contains component, but no weight fields in E */
   short      ExpL_Size; // size of exponent vector in long
@@ -672,7 +600,7 @@ struct sip_sring
   /* number of long vars in exp vector:
      long vars are those longs in the exponent vector which are
      occupied by variables, only */
-  short     VarL_Size;
+  short      VarL_Size;
   short      BitsPerExp; /* number of bits per exponent */
   short      ExpPerLong; /* maximal number of Exponents per long */
   short      pCompIndex; /* p->exp.e[pCompIndex] is the component */
@@ -719,31 +647,6 @@ struct sip_sring
 #endif
 };
 
-struct sip_sideal
-{
-  poly*  m;
-  long rank;
-  int nrows;
-  int ncols;
-  #define IDELEMS(i) ((i)->ncols)
-};
-
-struct sip_smap
-{
-  poly *m;
-  char *preimage;
-  int nrows;
-  int ncols;
-};
-
-struct sideal_list
-{
-  ideal_list next;
-  ideal      d;
-#ifndef NDEBUG
-  int nr;
-#endif
-};
 #endif /* __cplusplus */
 
 
@@ -774,24 +677,6 @@ int siRand();
 #endif
 #endif
 
-/*the general set of std-options --> kutil.cc */
-extern BITSET test;
-/*the general set of verbose-options --> febase.cc */
-#ifdef __cplusplus
-extern "C" BITSET verbose;
-#else
-extern BITSET verbose;
-#endif
-/*debugging the bison grammar --> grammar.cc*/
-#ifdef YYDEBUG
-#if YYDEBUG
-extern int    yydebug;
-#endif
-#endif
-
-extern int      yylineno;
-extern char     my_yylinebuf[80];
-
 #define loop for(;;)
 
 #ifndef ABS
@@ -808,127 +693,7 @@ static inline long si_min(const long a, const long b)  { return (a<b) ? a : b; }
 #define si_min(A,B) ((A) < (B) ? (A) : (B))
 #endif
 
-/*
-**  Set operations (small sets only)
-*/
-
-#define Sy_bit(x)     ((unsigned)1<<(x))
-#define Sy_inset(x,s) ((Sy_bit(x)&(s))?TRUE:FALSE)
-#define BTEST1(a)     Sy_inset((a), test)
-#define BVERBOSE(a)   Sy_inset((a), verbose)
-
-/*
-** defines for BITSETs
-*/
-
-#define V_SHOW_MEM    2
-#define V_YACC        3
-#define V_REDEFINE    4
-#define V_READING     5
-#define V_LOAD_LIB    6
-#define V_DEBUG_LIB   7
-#define V_LOAD_PROC   8
-#define V_DEF_RES     9
-#define V_DEBUG_MEM  10
-#define V_SHOW_USE   11
-#define V_IMAP       12
-#define V_PROMPT     13
-#define V_NSB        14
-#define V_CONTENTSB  15
-#define V_CANCELUNIT 16
-#define V_MODPSOLVSB 17
-#define V_UPTORADICAL 18
-#define V_FINDMONOM  19
-#define V_COEFSTRAT  20
-#define V_IDLIFT     21
-#define V_LENGTH     22
-/* for tests: 23-30 */
-#define V_DEG_STOP   31
-
-
-#define OPT_PROT           0
-#define OPT_REDSB          1
-#define OPT_NOT_BUCKETS    2
-#define OPT_NOT_SUGAR      3
-#define OPT_INTERRUPT      4
-#define OPT_SUGARCRIT      5
-#define OPT_DEBUG          6
-#define OPT_REDTHROUGH     7
-#define OPT_RETURN_SB      9
-#define OPT_FASTHC        10
-#define OPT_OLDSTD        20
-#define OPT_KEEPVARS      21
-#define OPT_STAIRCASEBOUND 22
-#define OPT_MULTBOUND     23
-#define OPT_DEGBOUND      24
-#define OPT_REDTAIL       25
-#define OPT_INTSTRATEGY   26
-#define OPT_FINDET        27
-#define OPT_INFREDTAIL    28
-#define OPT_SB_1          29
-#define OPT_NOTREGULARITY 30
-#define OPT_WEIGHTM       31
-
-/* define ring dependent options */
-#define TEST_RINGDEP_OPTS \
- (Sy_bit(OPT_INTSTRATEGY) | Sy_bit(OPT_REDTHROUGH) | Sy_bit(OPT_REDTAIL))
-
-#define TEST_OPT_PROT              BTEST1(OPT_PROT)
-#define TEST_OPT_REDSB             BTEST1(OPT_REDSB)
-#define TEST_OPT_NOT_BUCKETS       BTEST1(OPT_NOT_BUCKETS)
-#define TEST_OPT_NOT_SUGAR         BTEST1(OPT_NOT_SUGAR)
-#define TEST_OPT_SUGARCRIT         BTEST1(OPT_SUGARCRIT)
-#define TEST_OPT_DEBUG             BTEST1(OPT_DEBUG)
-#define TEST_OPT_FASTHC            BTEST1(OPT_FASTHC)
-#define TEST_OPT_INTSTRATEGY       BTEST1(OPT_INTSTRATEGY)
-#define TEST_OPT_FINDET            BTEST1(OPT_FINDET)
-#define TEST_OPT_RETURN_SB         BTEST1(OPT_RETURN_SB)
-#define TEST_OPT_KEEPVARS          BTEST1(OPT_KEEPVARS)
-#define TEST_OPT_DEGBOUND          BTEST1(OPT_DEGBOUND)
-#define TEST_OPT_MULTBOUND         BTEST1(OPT_MULTBOUND)
-#define TEST_OPT_STAIRCASEBOUND    BTEST1(OPT_STAIRCASEBOUND)
-#define TEST_OPT_REDTAIL           BTEST1(OPT_REDTAIL)
-#define TEST_OPT_INFREDTAIL        BTEST1(OPT_INFREDTAIL)
-#define TEST_OPT_SB_1              BTEST1(OPT_SB_1)
-#define TEST_OPT_NOTREGULARITY     BTEST1(OPT_NOTREGULARITY)
-#define TEST_OPT_WEIGHTM           BTEST1(OPT_WEIGHTM)
-#define TEST_OPT_REDTHROUGH        BTEST1(OPT_REDTHROUGH)
-#define TEST_OPT_OLDSTD            BTEST1(OPT_OLDSTD)
-#define TEST_OPT_CONTENTSB         BVERBOSE(V_CONTENTSB)
-#define TEST_OPT_CANCELUNIT        BVERBOSE(V_CANCELUNIT)
-#define TEST_OPT_IDLIFT            BVERBOSE(V_IDLIFT)
-#define TEST_OPT_LENGTH            BVERBOSE(V_LENGTH)
-
-#define TEST_VERB_NSB              BVERBOSE(V_NSB)
-#define TEST_V_DEG_STOP            BVERBOSE(V_DEG_STOP)
-#define TEST_V_MODPSOLVSB          BVERBOSE(V_MODPSOLVSB)
-#define TEST_V_COEFSTRAT           BVERBOSE(V_COEFSTRAT)
-#define TEST_V_UPTORADICAL         BVERBOSE(V_UPTORADICAL)
-#define TEST_V_FINDMONOM           BVERBOSE(V_FINDMONOM)
-#ifdef HAVE_LIBPARSER
-#ifdef __cplusplus
-class libstack;
-typedef libstack *  libstackv;
-#endif
-#endif /* HAVE_LIBPARSER */
-
-extern struct omBin_s* MP_INT_bin;
 extern struct omBin_s* char_ptr_bin;
-extern struct omBin_s* ideal_bin;
-extern struct omBin_s* int_bin;
-extern struct omBin_s* poly_bin;
-extern struct omBin_s* void_ptr_bin;
-extern struct omBin_s* indlist_bin;
-extern struct omBin_s* naIdeal_bin;
-extern struct omBin_s* snaIdeal_bin;
-extern struct omBin_s* sm_prec_bin;
-extern struct omBin_s* smprec_bin;
-extern struct omBin_s* sip_sideal_bin;
-extern struct omBin_s* sip_smap_bin;
-extern struct omBin_s* sip_sring_bin;
-extern struct omBin_s* ip_sideal_bin;
-extern struct omBin_s* ip_smap_bin;
-extern struct omBin_s* ip_sring_bin;
 extern struct omBin_s* sleftv_bin;
 
 #ifdef __cplusplus
@@ -962,90 +727,13 @@ class idrec
 
   short      lev;
   short      ref;
-#ifdef HAVE_IDI
   int        id_i;
-#endif
-
-#define IDNEXT(a)    ((a)->next)
-#define IDTYP(a)     ((a)->typ)
-#define IDFLAG(a)    ((a)->flag)
-#define IDLEV(a)     ((a)->lev)
-#define IDID(a)      ((a)->id)
-#define IDATTR(a)    ((a)->attribute)
-
-#define IDINT(a)    ((int)(long)((a)->data.ustring))
-#define IDDATA(a)   ((a)->data.ustring)
-#define IDRING(a)   ((a)->data.uring)
-#define IDINTVEC(a) ((a)->data.iv)
-#define IDPOLY(a)   ((a)->data.p)
-#define IDBIGINT(a) ((a)->data.n)
-#define IDNUMBER(a) ((a)->data.n)
-#define IDIDEAL(a)  (((a)->data).uideal)
-#define IDMATRIX(a) (((a)->data).umatrix)
-#define IDMAP(a)    (((a)->data).umap)
-#define IDSTRING(a) ((a)->data.ustring)
-#define IDLIST(a)   ((a)->data.l)
-#define IDLINK(a)   ((a)->data.li)
-#define IDPACKAGE(a) ((a)->data.pack)
-#define IDPROC(a)   ((a)->data.pinf)
 
   idrec() { memset(this,0,sizeof(*this)); }
   idhdl get(const char * s, int lev);
   idhdl set(const char * s, int lev, idtyp t, BOOLEAN init=TRUE);
   char * String();
 //  ~idrec();
-};
-
-class proc_singular
-{
-public:
-  long   proc_start;       // position where proc is starting
-  long   def_end;          // position where proc header is ending
-  long   help_start;       // position where help is starting
-  long   help_end;         // position where help is starting
-  long   body_start;       // position where proc-body is starting
-  long   body_end;         // position where proc-body is ending
-  long   example_start;    // position where example is starting
-  long   proc_end;         // position where proc is ending
-  int    proc_lineno;
-  int    body_lineno;
-  int    example_lineno;
-  char   *body;
-  long help_chksum;
-};
-
-struct proc_object
-{
-//public:
-  BOOLEAN (*function)(leftv res, leftv v);
-};
-
-union uprocinfodata;
-
-union uprocinfodata
-{
-public:
-  proc_singular  s;        // data of Singular-procedure
-  struct proc_object    o; // pointer to binary-function
-};
-
-typedef union uprocinfodata procinfodata;
-
-typedef enum { LANG_NONE, LANG_TOP, LANG_SINGULAR, LANG_C, LANG_MAX} language_defs;
-// LANG_TOP     : Toplevel package only
-// LANG_SINGULAR:
-// LANG_C       :
-class procinfo
-{
-public:
-  char          *libname;
-  char          *procname;
-  package       pack;
-  language_defs language;
-  short         ref;
-  char          is_static;        // if set, proc not accessible for user
-  char          trace_flag;
-  procinfodata  data;
 };
 
 #endif

@@ -167,7 +167,7 @@ HEADERS=hutil.h stairc.h ideals.h \
         GMPrat.h multicnt.h npolygon.h semic.h spectrum.h splist.h multicnt.h \
 	eigenval.h units.h mod_raw.h kbuckets.h sbuckets.h\
 	mpr_global.h mpr_inout.h mpr_base.h mpr_numeric.h \
-	fegetopt.h distrib.h \
+	fegetopt.h distrib.h options.h \
 	ratgring.h shiftgb.h prCopy.h prCopyMacros.h \
         p_MemAdd.h p_MemCopy.h p_MemCmp.h p_Numbers.h \
         pInline2.h pInline1.h pInline0.h mmalloc.h \
@@ -250,7 +250,7 @@ DL_LIBSG=
 DL_LIBSP=
 endif
 
-all:	kversion.h libkernel.a libkernel_g.a libkernel_p.a mmalloc.o ${DL_LIBS} ${DL_LIBSG} ${OBJS2} ${DL_LIBSP}
+all:	kversion.h libkernel.a libkernel_g.a mmalloc.o ${DL_LIBS} ${DL_LIBSG} ${OBJS2}
 
 libkernel.a: ${OBJS}
 	-rm -f libkernel.a
@@ -290,22 +290,32 @@ p_Procs_%.so: p_Procs_Lib_%.dl_o
 install-nolns: install
 
 install-libsingular:
-	${MKINSTALLDIRS} ${includedir}/singular
-	-for file in *.h kInline.cc; do ${INSTALL_PROGRAM} $$file ${includedir}/singular; done
+	${INSTALL_PROGRAM} kInline.cc ${includedir}/singular
+	-for file in *.h; do ${INSTALL_PROGRAM} $$file ${includedir}/singular; done
 
 install: all installbin
 
-installbin: ${DL_LIBS} ${DL_LIBSG} ${DL_LIBSP}
+install_all: install libkernel_p.a ${DL_LIBSP}
+	- ranlib libkernel_p.a
+ifeq (,${DL_LIBS})
+else
+ifeq (,${DL_LIBSG})
+else
+	-for file in ${DL_LIBSP}; do ${INSTALL_PROGRAM} $$file ../Singular; done
+endif
+endif
+
+
+installbin: ${DL_LIBS} ${DL_LIBSG}
 	${MKINSTALLDIRS} ${bindir}
 	- ranlib libkernel.a
 	- ranlib libkernel_g.a
-	- ranlib libkernel_p.a
 ifeq (,${DL_LIBS})
 else
 	-${INSTALL_PROGRAM} ${DL_LIBS} ${bindir}
 ifeq (,${DL_LIBSG})
 else
-	-for file in ${DL_LIBS} ${DL_LIBSG} ${DL_LIBSP}; do ${INSTALL_PROGRAM} $$file ../Singular; done
+	-for file in ${DL_LIBS} ${DL_LIBSG}; do ${INSTALL_PROGRAM} $$file ../Singular; done
 endif
 endif
 
@@ -322,10 +332,10 @@ endif
 ##
 mostlyclean: 
 	-rm -f p_Procs_*.inc
-	-rm -f *.o *.og core *.op p_Procs *.dl_o* *.so*
+	-rm -f *.o *.og core *.op p_Procs *.dl_o*
 
 clean: mostlyclean
-	-rm -f *.bak *.d *.dd depend
+	-rm -f *.bak *.d *.dd depend *.a *.so*
 
 distclean: clean
 	-rm -f *~ .\#* kversion.h

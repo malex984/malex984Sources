@@ -15,6 +15,7 @@
 #define MORA_USE_BUCKETS
 
 #include "mod2.h"
+#include "omalloc.h"
 
 #ifndef NDEBUG
 # define MYTEST 0
@@ -28,8 +29,7 @@
 #endif /* ifdef HAVE_TAIL_RING */
 #endif /* if MYTEST */
 
-#include "structs.h"
-#include "omalloc.h"
+#include "options.h"
 #include "kutil.h"
 #include "kInline.cc"
 #include "polys.h"
@@ -60,7 +60,6 @@ BITSET kOptions=Sy_bit(OPT_PROT)           /*  0 */
                 |Sy_bit(OPT_REDTHROUGH)
                 |Sy_bit(OPT_OLDSTD)
                 |Sy_bit(OPT_FASTHC)        /* 10 */
-                |Sy_bit(OPT_KEEPVARS)      /* 21 */
                 |Sy_bit(OPT_INTSTRATEGY)   /* 26 */
                 |Sy_bit(OPT_INFREDTAIL)    /* 28 */
                 |Sy_bit(OPT_NOTREGULARITY) /* 30 */
@@ -89,7 +88,7 @@ BITSET validOpts=Sy_bit(0)
                 |Sy_bit(18)
                 |Sy_bit(19)
 //                |Sy_bit(20) obachman 11/00 tossed: 12/00 used for redOldStd
-  |Sy_bit(OPT_OLDSTD)
+                |Sy_bit(OPT_OLDSTD)
                 |Sy_bit(21)
                 |Sy_bit(22)
                 /*|Sy_bit(23)*/
@@ -1790,6 +1789,11 @@ ideal kStd(ideal F, ideal Q, tHomog h,intvec ** w, intvec *hilb,int syzComp,
   }
   else
 #endif
+#ifdef HAVE_RINGS
+  if (rField_is_Ring(currRing)) 
+    r=bba(F,Q,NULL,hilb,strat); 
+  else
+#endif
   {
     if (pOrdSgn==-1)
     {
@@ -2081,13 +2085,9 @@ poly kNF(ideal F, ideal Q, poly p,int syzComp, int lazyReduce)
     return pCopy(p); /*F+Q=0*/
   }
 
-
   kStrategy strat=new skStrategy;
   strat->syzComp = syzComp;
   strat->ak = si_max(idRankFreeModule(F),pMaxComp(p));
-
-
-
   poly res;
 
   if (pOrdSgn==-1)
@@ -2100,7 +2100,6 @@ poly kNF(ideal F, ideal Q, poly p,int syzComp, int lazyReduce)
   if(pp != p)
     p_Delete(&pp, currRing);
 #endif
-
   return res;
 }
 
@@ -2127,14 +2126,12 @@ ideal kNF(ideal F, ideal Q, ideal p,int syzComp,int lazyReduce)
   }
 #endif
 
-
   if ((idIs0(F))&&(Q==NULL))
   {
 #ifdef HAVE_PLURAL
     if(p != pp)
       return pp;
 #endif
-
     return idCopy(p); /*F+Q=0*/
   }
 
@@ -2142,7 +2139,6 @@ ideal kNF(ideal F, ideal Q, ideal p,int syzComp,int lazyReduce)
   strat->syzComp = syzComp;
   strat->ak = si_max(idRankFreeModule(F),idRankFreeModule(p));
   strat->ak = si_max(strat->ak,(int)F->rank);
-
 
   if (pOrdSgn==-1)
     res=kNF1(F,Q,pp,strat,lazyReduce);
@@ -2246,12 +2242,10 @@ ideal kInterRedOld (ideal F, ideal Q)
     shdl=res;
   }
   delete(strat);
-
 #ifdef HAVE_PLURAL
   if( tempF != F )
     id_Delete( &tempF, currRing);
 #endif
-
   return shdl;
 }
 // new version

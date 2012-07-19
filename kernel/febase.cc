@@ -25,9 +25,9 @@
 #include "febase.h"
 #include "omalloc.h"
 #include "dError.h"
-#include "../Singular/ipshell.h"
+#include "options.h"
 
-#define fePutChar(c) fputc((uchar)(c),stdout)
+#define fePutChar(c) fputc((unsigned char)(c),stdout)
 /*0 implementation */
 
 char fe_promptstr[] ="  ";
@@ -47,7 +47,9 @@ int     pagelength = 24;
 int     colmax = 80;
 char    prompt_char = '>'; /*1 either '>' or '.'*/
 extern "C" {
-BITSET  verbose = 1
+BITSET  test=(BITSET)0;
+BITSET  verbose = Sy_bit(V_QUIET)
+                  //| Sy_bit(V_QRING) // not default, as speed drops by 10 %
                   | Sy_bit(V_REDEFINE)
                   | Sy_bit(V_LOAD_LIB)
                   | Sy_bit(V_SHOW_USE)

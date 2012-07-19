@@ -70,7 +70,7 @@ static number ngcMapP(number from)
     return NULL;
 }
 
-nMapFunc ngcSetMap(ring src,ring dst)
+nMapFunc ngcSetMap(const ring src,const ring dst)
 {
   if(rField_is_Q(src))
   {
@@ -100,11 +100,6 @@ number   ngcPar(int i)
 {
   gmp_complex* n= new gmp_complex( (long)0, (long)1 );
   return (number)n;
-}
-
-void ngcNew (number * r)
-{
-  *r=NULL;
 }
 
 /*2
@@ -459,7 +454,7 @@ const char * ngcRead (const char * s, number * a)
 /*2
 * write a floating point number
 */
-void ngcWrite (number &a)
+void ngcWrite (number &a, const ring r)
 {
   if (a==NULL)
     StringAppendS("0");

@@ -27,14 +27,14 @@ number  nfNeg         (number c);
 number  nfInvers      (number c);
 BOOLEAN nfGreater     (number a, number b);
 BOOLEAN nfEqual       (number a, number b);
-void    nfWrite       (number &a);
+void    nfWrite       (number &a, const ring r);
 const char *  nfRead  (const char *s, number *a);
 #ifdef LDEBUG
 BOOLEAN nfDBTest      (number a, const char *f, const int l);
 #endif
 void    nfSetChar     (int c, char ** param);
 
-nMapFunc nfSetMap     (ring src, ring dst);
+nMapFunc nfSetMap     (const ring src, const ring dst);
 char *  nfName        (number n);
 extern  int nfMinPoly[];
 extern  int nfCharP;  /* the characteristic: p*/

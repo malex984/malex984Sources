@@ -167,7 +167,7 @@ number nlMapMachineInt(number from)
 }
 #endif
 
-nMapFunc nlSetMap(ring src, ring dst)
+nMapFunc nlSetMap(const ring src, const ring dst)
 {
   if (rField_is_Q(src))
   {
@@ -2293,11 +2293,6 @@ LINLINE number nlCopy(number a)
   return _nlCopy_NoImm(a);
 }
 
-
-LINLINE void nlNew (number * r)
-{
-  *r=NULL;
-}
 
 /*2
 * delete a

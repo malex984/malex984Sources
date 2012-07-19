@@ -19,8 +19,7 @@ int nfCharQ=0;  /* the number of elemts: q*/
 int nfM1;       /*representation of -1*/
 int nfCharP=0;  /* the characteristic: p*/
 static int nfCharQ1=0; /* q-1 */
-CARDINAL *nfPlus1Table=NULL; /* the table i=log(z^i) -> log(z^i+1) */
-char * nfParameter;          /*  the name of the primitive element */
+unsigned short *nfPlus1Table=NULL; /* the table i=log(z^i) -> log(z^i+1) */
 /* the q's from the table 'fftable' */
 unsigned short fftable[]={
     4,  8, 16, 32, 64, 128, 256, 512,1024,2048,4096,8192,16384, 32768,
@@ -166,7 +165,7 @@ number nfInit (int i, const ring r)
   while (i <  0)    i += nfCharP;
   while (i >= nfCharP) i -= nfCharP;
   if (i==0) return (number)(long)nfCharQ;
-  CARDINAL c=0;
+  unsigned short c=0;
   while (i>1)
   {
     c=nfPlus1Table[c];
@@ -380,7 +379,7 @@ BOOLEAN nfEqual (number a,number b)
 /*2
 * write via StringAppend
 */
-void nfWrite (number &a)
+void nfWrite (number &a, const ring r)
 {
 #ifdef LDEBUG
   nfTest(a);
@@ -390,10 +389,10 @@ void nfWrite (number &a)
   else if (nfIsMOne(a))   StringAppendS("-1");
   else
   {
-    StringAppendS(nfParameter);
+    StringAppendS(r->parameter[0]);
     if ((long)a!=1L)
     {
-      if(currRing->ShortOut==0)  StringAppendS("^");
+      if(r->ShortOut==0)  StringAppendS("^");
       StringAppend("%d",(int)((long)a));
     }
   }
@@ -408,6 +407,7 @@ char * nfName(number a)
   nfTest(a);
 #endif
   char *s;
+  char *nfParameter=currRing->parameter[0];
   if (((long)a==(long)nfCharQ) || ((long)a==0L)) return NULL;
   else if ((long)a==1L)
   {
@@ -487,6 +487,7 @@ const char * nfRead (const char *s, number *a)
     n=nfInit(i, currRing);
     *a = nfDiv(z,n);
   }
+  char *nfParameter=currRing->parameter[0];
   if (strncmp(s,nfParameter,strlen(nfParameter))==0)
   {
     s+=strlen(nfParameter);
@@ -546,7 +547,7 @@ void nfShowMipo()
   {
     j++;
     if (nfMinPoly[j]!=0)
-      StringAppend("%d*%s^%d",nfMinPoly[j],nfParameter,i);
+      StringAppend("%d*%s^%d",nfMinPoly[j],currRing->parameter[0],i);
     i--;
     if(i<0) break;
     if (nfMinPoly[j]!=0)
@@ -582,7 +583,6 @@ static void nfReadMipo(char *s)
 void nfSetChar(int c, char **param)
 {
   //Print("GF(%d)\n",c);
-  nfParameter=param[0];
   if ((c==nfCharQ)||(c==-nfCharQ))
     /*this field is already set*/  return;
   int i=0;
@@ -591,7 +591,7 @@ void nfSetChar(int c, char **param)
     return;
   if (nfCharQ > 1)
   {
-    omFreeSize( (ADDRESS)nfPlus1Table,nfCharQ*sizeof(CARDINAL) );
+    omFreeSize( (ADDRESS)nfPlus1Table,nfCharQ*sizeof(unsigned short) );
     nfPlus1Table=NULL;
   }
   if ((c>1) || (c<0))
@@ -619,7 +619,7 @@ void nfSetChar(int c, char **param)
     nfReadMipo(buf);
     nfCharQ1=nfCharQ-1;
     //Print("nfCharQ=%d,nfCharQ1=%d,mipo=>>%s<<\n",nfCharQ,nfCharQ1,buf);
-    nfPlus1Table= (CARDINAL *)omAlloc( (nfCharQ)*sizeof(CARDINAL) );
+    nfPlus1Table= (unsigned short *)omAlloc( (nfCharQ)*sizeof(unsigned short) );
     int digs = gf_tab_numdigits62( nfCharQ );
     char * bufptr;
     int i = 1;
@@ -698,7 +698,7 @@ number nfMapGGrev(number c)
 /*2
 * set map function nMap ... -> GF(p,n)
 */
-nMapFunc nfSetMap(ring src, ring dst)
+nMapFunc nfSetMap(const ring src, const ring dst)
 {
   if (rField_is_GF(src,nfCharQ))
   {

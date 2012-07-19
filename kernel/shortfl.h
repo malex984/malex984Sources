@@ -24,14 +24,14 @@ number  nrNeg         (number c);
 number  nrInvers      (number c);
 BOOLEAN nrGreater     (number a, number b);
 BOOLEAN nrEqual       (number a, number b);
-void    nrWrite       (number &a);
+void    nrWrite       (number &a, const ring r);
 const char *  nrRead  (const char *s, number *a);
 int     nrGetChar();
 #ifdef LDEBUG
 BOOLEAN nrDBTest(number a, const char *f, const int l);
 #endif
 
-nMapFunc nrSetMap(ring src, ring dst);
+nMapFunc nrSetMap(const ring src, const ring dst);
 
 float   nrFloat(number n);
 number nrMapQ(number from);

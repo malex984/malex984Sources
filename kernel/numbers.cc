@@ -33,7 +33,6 @@ extern omBin gmp_nrz_bin;
 //static int characteristic = 0;
 extern int IsPrime(int p);
 
-void   (*nNew)(number *a);
 number  (*nInit_bigint)(number i);
 number (*nPar)(int i);
 int    (*nParDeg)(number n);
@@ -59,7 +58,6 @@ BOOLEAN (*nIsZero)(number a);
 BOOLEAN (*nIsOne)(number a);
 BOOLEAN (*nIsMOne)(number a);
 BOOLEAN (*nGreaterZero)(number a);
-void    (*nWrite)(number &a);
 const char* (*nRead)(const char *s,number *a);
 void    (*nPower)(number a, int i, number * result);
 number  (*nGcd)(number a, number b, const ring r);
@@ -71,7 +69,7 @@ number nNULL; /* the 0 as constant */
 
 n_Procs_s *cf_root=NULL;
 
-void   nDummy1(number* d) { *d=NULL; }
+void   nNew(number* d) { *d=NULL; }
 void   ndDelete(number* d, const ring r) { *d=NULL; }
 void   ndInpMult(number &a, number b, const ring r)
 {
@@ -205,7 +203,6 @@ void nSetChar(ring r)
     WerrorS("unknown field");
   }
 #endif
-  nNew   = r->cf->nNew;
   nNormalize=r->cf->nNormalize;
   nPar   = r->cf->nPar;
   nParDeg= r->cf->nParDeg;
@@ -233,7 +230,6 @@ void nSetChar(ring r)
   nIsOne = r->cf->nIsOne;
   nIsMOne = r->cf->nIsMOne;
   nGreaterZero = r->cf->nGreaterZero;
-  nWrite = r->cf->nWrite;
   nRead = r->cf->nRead;
   nPower = r->cf->nPower;
   nGcd  = r->cf->nGcd;
@@ -299,7 +295,6 @@ void nInitChar(ring r)
   n->nName =  ndName;
   n->nImPart=ndReturn0;
   n->cfDelete= ndDelete;
-  n->nNew=nDummy1;
   n->nInpMult=ndInpMult;
   n->cfCopy=nd_Copy;
   n->nIntMod=ndIntMod; /* dummy !! */
@@ -317,7 +312,6 @@ void nInitChar(ring r)
   {
     //naInitChar(c,TRUE,r);
     n->cfDelete = naDelete;
-    n-> nNew       = naNew;
     n-> nNormalize = naNormalize;
     n->cfInit      = naInit;
     n->nPar        = naPar;
@@ -339,7 +333,7 @@ void nInitChar(ring r)
     n->nIsOne      = naIsOne;
     n->nIsMOne     = naIsMOne;
     n->nGreaterZero= naGreaterZero;
-    n->nWrite      = naWrite;
+    n->cfWrite     = naWrite;
     n->nRead       = naRead;
     n->nPower      = naPower;
     n->nGcd        = naGcd;
@@ -378,7 +372,7 @@ void nInitChar(ring r)
      n->nIsOne = nr2mIsOne;
      n->nIsMOne = nr2mIsMOne;
      n->nGreaterZero = nr2mGreaterZero;
-     n->nWrite = nr2mWrite;
+     n->cfWrite = nr2mWrite;
      n->nRead = nr2mRead;
      n->nPower = nr2mPower;
      n->cfSetMap = nr2mSetMap;
@@ -421,7 +415,7 @@ void nInitChar(ring r)
      n->nIsOne = nrnIsOne;
      n->nIsMOne = nrnIsMOne;
      n->nGreaterZero = nrnGreaterZero;
-     n->nWrite = nrnWrite;
+     n->cfWrite = nrnWrite;
      n->nRead = nrnRead;
      n->nPower = nrnPower;
      n->cfSetMap = nrnSetMap;
@@ -462,7 +456,7 @@ void nInitChar(ring r)
      n->nIsOne = nrzIsOne;
      n->nIsMOne = nrzIsMOne;
      n->nGreaterZero = nrzGreaterZero;
-     n->nWrite = nrzWrite;
+     n->cfWrite = nrzWrite;
      n->nRead = nrzRead;
      n->nPower = nrzPower;
      n->cfSetMap = nrzSetMap;
@@ -481,7 +475,6 @@ void nInitChar(ring r)
   else if (rField_is_Q(r))
   {
     n->cfDelete= nlDelete;
-    n->nNew   = nlNew;
     n->nNormalize=nlNormalize;
     n->cfInit = nlInit;
     n->n_Int  = nlInt;
@@ -502,7 +495,7 @@ void nInitChar(ring r)
     n->nIsOne = nlIsOne;
     n->nIsMOne = nlIsMOne;
     n->nGreaterZero = nlGreaterZero;
-    n->nWrite = nlWrite;
+    n->cfWrite = nlWrite;
     n->nRead = nlRead;
     n->nPower = nlPower;
     n->nGcd  = nlGcd;
@@ -535,7 +528,7 @@ void nInitChar(ring r)
     n->nIsOne = npIsOne;
     n->nIsMOne = npIsMOne;
     n->nGreaterZero = npGreaterZero;
-    n->nWrite = npWrite;
+    n->cfWrite = npWrite;
     n->nRead = npRead;
     n->nPower = npPower;
     n->cfSetMap = npSetMap;
@@ -577,7 +570,7 @@ void nInitChar(ring r)
     n->nIsOne = nfIsOne;
     n->nIsMOne = nfIsMOne;
     n->nGreaterZero = nfGreaterZero;
-    n->nWrite = nfWrite;
+    n->cfWrite = nfWrite;
     n->nRead = nfRead;
     n->nPower = nfPower;
     n->cfSetMap = nfSetMap;
@@ -607,7 +600,7 @@ void nInitChar(ring r)
     n->nIsOne = nrIsOne;
     n->nIsMOne = nrIsMOne;
     n->nGreaterZero = nrGreaterZero;
-    n->nWrite = nrWrite;
+    n->cfWrite = nrWrite;
     n->nRead = nrRead;
     n->nPower = nrPower;
     n->cfSetMap=nrSetMap;
@@ -621,7 +614,6 @@ void nInitChar(ring r)
   else if (rField_is_long_R(r))
   {
     n->cfDelete= ngfDelete;
-    n->nNew=ngfNew;
     n->cfInit = ngfInit;
     n->n_Int  = ngfInt;
     n->nAdd   = ngfAdd;
@@ -638,7 +630,7 @@ void nInitChar(ring r)
     n->nIsOne = ngfIsOne;
     n->nIsMOne = ngfIsMOne;
     n->nGreaterZero = ngfGreaterZero;
-    n->nWrite = ngfWrite;
+    n->cfWrite = ngfWrite;
     n->nRead = ngfRead;
     n->nPower = ngfPower;
     n->cfSetMap=ngfSetMap;
@@ -652,7 +644,6 @@ void nInitChar(ring r)
   else if (rField_is_long_C(r))
   {
     n->cfDelete= ngcDelete;
-    n->nNew=ngcNew;
     n->nNormalize=nDummy2;
     n->cfInit = ngcInit;
     n->n_Int  = ngcInt;
@@ -670,7 +661,7 @@ void nInitChar(ring r)
     n->nIsOne = ngcIsOne;
     n->nIsMOne = ngcIsMOne;
     n->nGreaterZero = ngcGreaterZero;
-    n->nWrite = ngcWrite;
+    n->cfWrite = ngcWrite;
     n->nRead = ngcRead;
     n->nPower = ngcPower;
     n->cfSetMap=ngcSetMap;
@@ -725,14 +716,14 @@ void nKillChar(ring r)
                  #ifdef HAVE_DIV_MOD
                  if (r->cf->npInvTable!=NULL)
                  omFreeSize( (ADDRESS)r->cf->npInvTable,
-                             r->cf->npPrimeM*sizeof(CARDINAL) );
+                             r->cf->npPrimeM*sizeof(unsigned short) );
                  #else
                  if (r->cf->npExpTable!=NULL)
                  {
                    omFreeSize( (ADDRESS)r->cf->npExpTable,
-                               r->cf->npPrimeM*sizeof(CARDINAL) );
+                               r->cf->npPrimeM*sizeof(unsigned short) );
                    omFreeSize( (ADDRESS)r->cf->npLogTable,
-                               r->cf->npPrimeM*sizeof(CARDINAL) );
+                               r->cf->npPrimeM*sizeof(unsigned short) );
                  }
                  #endif
                  break;
@@ -766,13 +757,5 @@ void nKillChar(ring r)
       rKill(r->algring);
       r->algring=NULL;
     }
-    #ifdef HAVE_RINGS
-    if (r->nrnModul!=NULL)
-    {
-      mpz_clear((int_number) r->nrnModul);
-      omFreeBin((ADDRESS) r->nrnModul, gmp_nrz_bin);
-      r->nrnModul=NULL;
-    }
-    #endif
   }
 }

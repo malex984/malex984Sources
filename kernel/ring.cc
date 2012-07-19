@@ -17,7 +17,7 @@
 # define MYTEST 0
 #endif /* ifndef NDEBUG */
 
-#include "structs.h"
+#include "options.h"
 #include "omalloc.h"
 #include "polys.h"
 #include "numbers.h"
@@ -41,6 +41,8 @@
 #endif
 
 #define BITS_PER_LONG 8*SIZEOF_LONG
+
+omBin sip_sring_bin = omGetSpecBin(sizeof(sip_sring));
 
 static const char * const ringorder_name[] =
 {
@@ -295,7 +297,7 @@ void rWrite(ring r)
   {
     PrintS("//   coeff. ring is : ");
     if (rField_is_Ring_Z(r)) PrintS("Integers\n");
-    int l = mpz_sizeinbase(r->ringflaga, 10) + 2;
+    long l = (long)mpz_sizeinbase(r->ringflaga, 10) + 2;
     char* s = (char*) omAlloc(l);
     mpz_get_str(s,10,r->ringflaga);
     if (rField_is_Ring_ModN(r)) Print("Z/%s\n", s);
@@ -551,8 +553,13 @@ void rDelete(ring r)
     mpz_clear(r->ringflaga);
     omFree((ADDRESS)r->ringflaga);
   }
+  if (r->nrnModul != NULL)
+  {
+    mpz_clear(r->nrnModul);
+    omFree((ADDRESS)r->nrnModul);
+  }
 #endif
-  omFreeBin(r, ip_sring_bin);
+  omFreeBin(r, sip_sring_bin);
 }
 
 int rOrderName(char * ordername)
@@ -637,7 +644,7 @@ char * rVarStr(ring r)
   {
     l+=strlen(r->names[i])+1;
   }
-  s=(char *)omAlloc(l);
+  s=(char *)omAlloc((long)l);
   s[0]='\0';
   for (i=0; i<r->N-1; i++)
   {
@@ -695,7 +702,7 @@ char * rCharStr(ring r)
   {
     l+=(strlen(r->parameter[i])+1);
   }
-  s=(char *)omAlloc(l+MAX_INT_LEN+1);
+  s=(char *)omAlloc((long)(l+MAX_INT_LEN+1));
   s[0]='\0';
   if (r->ch<0)       sprintf(s,"%d",-r->ch); /* Fp(a) */
   else if (r->ch==1) sprintf(s,"0");         /* Q(a)  */
@@ -726,7 +733,7 @@ char * rParStr(ring r)
   {
     l+=strlen(r->parameter[i])+1;
   }
-  char *s=(char *)omAlloc(l);
+  char *s=(char *)omAlloc((long)l);
   s[0]='\0';
   for (i=0; i<rPar(r)-1; i++)
   {
@@ -760,8 +767,31 @@ int  rIsExtension()
   return rIsExtension( currRing );
 }
 
+int binaryPower (const int a, const int b)
+{
+  /* computes a^b according to the binary representation of b,
+     i.e., a^7 = a^4 * a^2 * a^1. This saves some multiplications. */
+  int result = 1;
+  int factor = a;
+  int bb = b;
+  while (bb != 0)
+  {
+    if (bb % 2 != 0) result = result * factor;
+    bb = bb / 2;
+    factor = factor * factor;
+  }
+  return result;
+}
+
 int rChar(ring r)
 {
+  if (rField_is_Ring_2toM(r))
+    return binaryPower(2, (int)(unsigned long)r->ringflagb);
+  if (rField_is_Ring_ModN(r))
+    return (int)mpz_get_ui(r->ringflaga);
+  if (rField_is_Ring_PtoM(r))
+    return binaryPower((int)mpz_get_ui(r->ringflaga),
+                       (int)(unsigned long)r->ringflagb);
   if (rField_is_numeric(r))
     return 0;
   if (!rIsExtension(r)) /* Q, Fp */
@@ -1282,7 +1312,7 @@ int rTensor(ring r1, ring r2, ring &sum, BOOLEAN vartest, BOOLEAN dp_dp)
       return -1;
     }
   }
-  sum=(ring)omAllocBin(ip_sring_bin);
+  sum=(ring)omAllocBin(sip_sring_bin);
   memcpy(sum,&tmpR,sizeof(ip_sring));
   rComplete(sum);
 
@@ -1509,7 +1539,7 @@ ring rCopy0(const ring r, BOOLEAN copy_qideal, BOOLEAN copy_ordering)
 {
   if (r == NULL) return NULL;
   int i,j;
-  ring res=(ring)omAllocBin(ip_sring_bin);
+  ring res=(ring)omAllocBin(sip_sring_bin);
   memset(res,0,sizeof(ip_sring));
   //memcpy4(res,r,sizeof(ip_sring));
   //memset: res->idroot=NULL; /* local objects */
@@ -2813,7 +2843,7 @@ ring rModifyRing(ring r, BOOLEAN omit_degree,
     omFreeSize(wvhdl,(nblocks+1)*sizeof(int_ptr));
     return r;
   }
-  ring res=(ring)omAlloc0Bin(ip_sring_bin);
+  ring res=(ring)omAlloc0Bin(sip_sring_bin);
   *res = *r;
 
 #ifdef HAVE_PLURAL
@@ -2916,7 +2946,7 @@ ring rModifyRing(ring r, BOOLEAN omit_degree,
 // construct Wp,C ring
 ring rModifyRing_Wp(ring r, int* weights)
 {
-  ring res=(ring)omAlloc0Bin(ip_sring_bin);
+  ring res=(ring)omAlloc0Bin(sip_sring_bin);
   *res = *r;
 #ifdef HAVE_PLURAL
   res->GetNC() = NULL;
@@ -2990,7 +3020,7 @@ ring rModifyRing_Simple(ring r, BOOLEAN ommit_degree, BOOLEAN ommit_comp, unsign
     {
       order[1]=ringorder_C;
     }
-    ring res=(ring)omAlloc0Bin(ip_sring_bin);
+    ring res=(ring)omAlloc0Bin(sip_sring_bin);
     *res = *r;
 #ifdef HAVE_PLURAL
     res->GetNC() = NULL;
@@ -3043,7 +3073,7 @@ void rKillModifiedRing(ring r)
   omFree(r->block0);
   omFree(r->block1);
   omFree(r->wvhdl);
-  omFreeBin(r,ip_sring_bin);
+  omFreeBin(r,sip_sring_bin);
 }
 
 void rKillModified_Wp_Ring(ring r)
@@ -3054,7 +3084,7 @@ void rKillModified_Wp_Ring(ring r)
   omFree(r->block1);
   omFree(r->wvhdl[0]);
   omFree(r->wvhdl);
-  omFreeBin(r,ip_sring_bin);
+  omFreeBin(r,sip_sring_bin);
 }
 
 static void rSetOutParams(ring r)
@@ -4003,7 +4033,10 @@ void rDebugPrint(ring r)
 
 //      for( int k = 0; k <= r->N; k++) if (r->typ[j].data.is.pVarOffset[k] != -1) Print("[%2d]: %04x; ", k, r->typ[j].data.is.pVarOffset[k]);
 
-      Print("  limit %d\n  F: ",r->typ[j].data.is.limit); idShow(r->typ[j].data.is.F, r, r, 1);
+      Print("  limit %d\n",r->typ[j].data.is.limit); 
+      #ifndef NDEBUG
+      PrintS("  F: ");idShow(r->typ[j].data.is.F, r, r, 1);
+      #endif
 
       PrintS("weights: ");
 
@@ -4128,6 +4161,7 @@ inline void m_DebugPrint(const poly p, const ring R)
 }
 
 
+#ifndef NDEBUG
 /// debug-print at most nTerms (2 by default) terms from poly/vector p,
 /// assuming that lt(p) lives in lmRing and tail(p) lives in tailRing.
 void p_DebugPrint(const poly p, const ring lmRing, const ring tailRing, const int nTerms)
@@ -4160,7 +4194,7 @@ void p_DebugPrint(const poly p, const ring lmRing, const ring tailRing, const in
   else
     PrintS("0\n");
 }
-
+#endif
 
 
 //    F = system("ISUpdateComponents", F, V, MIN );
@@ -5070,6 +5104,13 @@ n_coeffType rFieldType(ring r)
   if (rField_is_Zp_a(r))   return n_Zp_a;
   if (rField_is_Q_a(r))    return n_Q_a;
   if (rField_is_long_C(r)) return n_long_C;
+  #ifdef HAVE_RINGS
+   if (rField_is_Ring_Z(r)) return n_Z;
+   if (rField_is_Ring_ModN(r)) return n_Zm;
+   if (rField_is_Ring_PtoM(r)) return n_Zpn;
+   if (rField_is_Ring_2toM(r)) return  n_Z2n;
+  #endif	  
+
   return n_unknown;
 }
 

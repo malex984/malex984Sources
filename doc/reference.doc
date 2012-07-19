@@ -136,6 +136,7 @@ and @code{LIB} no brackets are allowed.
 * minres::
 * modulo::
 * monitor::
+* monomial::
 * mpresmat::
 * mres::
 * mstd::
@@ -1818,17 +1819,12 @@ See
 
 @table @code
 @item @strong{Syntax:}
-@code{factorize (} poly_expression @code{)}
-@*@code{factorize (} poly_expression@code{, 0 )}
-@*@code{factorize (} poly_expression@code{, 2 )}
+@code{farey (} bigint_expression @code{,} bigint_expression @code{)}
+@*@code{farey (} ideal_expression @code{,} bigint_expression @code{)}
+@*@code{farey (} module_expression @code{,} bigint_expression @code{)}
+@*@code{farey (} matrix_expression @code{,} bigint_expression @code{)}
 @item @strong{Type:}
-list of ideal and intvec
-@*
-@item @strong{Syntax:}
-@code{farey (} bigint_expression@code{,} bigint_expression @code{)}
-@*@code{farey (} ideal_expression@code{,} bigint_expression @code{)}
-@item @strong{Type:}
-number/ideal
+type of the first argument
 @item @strong{Purpose:}
 lift the first argument modulo the second to the rationals
 @item @strong{Note:}
@@ -3394,6 +3390,7 @@ intvec
 @item @strong{Purpose:}
 returns the exponent vector of the leading monomial of a polynomial or a vector.
 In the case of a vector the last component is the index in the vector.
+(The inverse to @code{monomial}.)
 @item @strong{Example:}
 @smallexample
 @c example
@@ -3412,6 +3409,7 @@ See
 @ref{leadcoef};
 @ref{leadmonom};
 @ref{intvec};
+@ref{monomial};
 @ref{poly};
 @ref{vector}.
 @c ref
@@ -3824,24 +3822,62 @@ See
 @cindex minor
 @table @code
 @item @strong{Syntax:}
-@code{minor (} matrix_expression@code{,} int_expression @code{)}
-@*@code{minor (} matrix_expression@code{,} int_expression@code{,} ideal_expression @code{)}
+@code{minor (} matrix_expression M@code{,} int_expression mSize@code{,} @*
+  @code{[} ideal_expression I@code{],} @*
+  @code{[} int_expression k@code{],} @*
+  @code{[} string_expression algorithm@code{],} @*
+  @code{[} int_expression cachedP@code{],} @*
+  @code{[} int_expression cachedM@code{])}
 @item @strong{Type:}
 ideal
 @item @strong{Purpose:}
-returns the set of all minors (= subdeterminants) of the given size of a matrix.
-The optional third argument must be a standard basis.
-If a third argument is given, the computations will be performed modulo that
-ideal.
+returns the specified set of (mSize x mSize)-minors (= subdeterminants)
+of the given matrix M. These minors form the list of generators of the
+returned ideal.@*
+If the optional ideal I is given, it is assumed to capture a standard
+basis. In this case, all computations will be performed modulo I. @*
+If k is not given, all minors will be computed. Otherwise, if k > 0,
+the first k non-zero minors will be computed; for k < 0, the first |k|
+minors will be computed regardless whether they are zero or not. Here,
+"first k minors" is with respect to a fixed ordering among all
+minors. (To understand the ordering, run the below example, type
+@code{minor(m,2,i,18);} and inspect the ordering among the returned 18
+minors. Note that this ordering is only enforced
+when some k <> 0 is provided. Otherwise, no ordering among the returned
+minors can be guaranteed. This is due to the fact that in this case,
+@code{minor} may call a specially tuned implementation of Bareiss's
+algorithm.) @*
+If no algorithm is given, a heuristic will pick the best-suited algorithm
+among Bareiss's algorithm (which is only applicable over integral domains),
+Laplace's algorithm, and Laplace's algorithm combined with caching of
+subdeterminantes. In the heuristic setting, cacheP and cacheM must also be
+absent. @*
+If the argument algorithm is present it must be one of @code{B/bareiss},
+@code{L/laplace}, and @code{C/cache}. For, @code{B/bareiss} and
+@code{L/laplace} the optional arguments cacheP and cacheM must again
+be absent, whereas for @code{C/cache}, they may be provided: cachedP
+determines the maximum number of cached subdeterminantes (=polynomials),
+and cachedM the total number of cached monomials (counted over all cached
+polynomials). If, for algorithm = @code{C/cache} cachedP and cachedM are
+not provided by the user, the values 200 and 100000, respectively, will
+be used as defaults.
 @item @strong{Example:}
 @smallexample
 @c example
-  ring r=0,(x(1..5)),ds;
-  matrix m[2][4]=x(1..4),x(2..5);
+  ring r=0,(a,b,c,d,e,f,g,h,s,t,u,v),ds;
+  matrix m[3][4]=a,b,c,d,e,f,g,h,s,t,u,v;
   print(m);
-  ideal j=minor(m,2);
-  j;
-  minor(m,2,std(ideal(x(1))));
+  // let's compute all non-zero minors;
+  // here we do not guarantee any ordering:
+  minor(m,2);
+  ideal i=a,c; i=std(i);
+  // here come the first 4 non-zero minors mod I;
+  // this time, a fixed ordering is guaranteed:
+  minor(m,2,i,4);
+  // and here the first 4 minors mod I (possibly zero)
+  // using Laplace's algorithm,
+  // again, the fixed ordering is guaranteed:
+  minor(m,2,i,-4,"Laplace");
 @c example
 @end smallexample
 @end table
@@ -3991,7 +4027,7 @@ See
 @ref{hom_kernel}.
 @c ref
 @c ---------------------------------------
-@node monitor, mpresmat, modulo, Functions
+@node monitor, monomial, modulo, Functions
 @subsection monitor
 @cindex monitor
 @table @code
@@ -4026,7 +4062,35 @@ See
 @ref{link expressions}.
 @c ref
 @c ---------------------------------------
-@node mpresmat, mres, monitor, Functions
+@node monomial, mpresmat, monitor, Functions
+@subsection monomial
+@cindex monomial
+@table @code
+@item @strong{Syntax:}
+@code{monomial (} intvec_expression @code{)}
+@item @strong{Type:}
+poly resp. vector
+@item @strong{Purpose:}
+converts an integer vector to a power product
+(the inverse to @code{leadexp}).
+@*Returns a @code{vector} iff the length of the argument is number of variables +1.
+@item @strong{Example:}
+@smallexample
+@c example
+  ring r=0,(x,y,z),dp;
+  monomial(intvec(2,3));
+  monomial(intvec(2,3,0,1));
+  leadexp(monomial(intvec(2,3,0,1)));
+@c example
+@end smallexample
+@end table
+@c ref
+See
+@ref{leadexp};
+@ref{intvec}.
+@c ref
+@c ---------------------------------------
+@node mpresmat, mres, monomial, Functions
 @subsection mpresmat
 @cindex mpresmat
 @table @code
@@ -4574,12 +4638,19 @@ the functions @code{syz}, @code{intersect}, @code{quotient},
 @c ---------
 @item @code{fastHC}
 @cindex fastHC, option
-tries to the find the highest corner of the staircase (HC) as fast as
+tries to find the highest corner of the staircase (HC) as fast as
 possible during a standard basis computation (only used for local
 orderings).
 @c ---------
 @c @item @code{interrupt}
 @c allows fast interruption of standard basis computation
+@c ---------
+@item @code{infRedTail}
+@cindex infRedTail, option
+local normal form computations will not use the ecart
+to avoid possibly infinite tail reductions: should only be used
+with extreme care.
+@*By default, it is only set in the case of a zero-dimensional ideal.
 @c ---------
 @item @code{intStrategy}
 @cindex intStrategy, option
@@ -4596,11 +4667,6 @@ which was used in @sc{Singular} version before 2-0
 @cindex length, option
 select shorter reduceers in std computations,
 @c ---------
-@c @item @code{minRes}
-@c @cindex minRes, option
-@c special (additional) minimizing during computations (@code{res}, @code{mres}),
-@c @*assumes homogeneous case and degree-compatible ordering.
-@c ---------
 @item @code{notRegularity}
 @cindex notRegularity, option
 disables the regularity bound for @code{res} and @code{mres} (see
@@ -4608,21 +4674,15 @@ disables the regularity bound for @code{res} and @code{mres} (see
 @c ---------
 @item @code{notSugar}
 @cindex notSugar, option
-disables the sugar strategy during standard basis computation.
+turns off sugar strategy during standard basis computation and reduction.
 @anchor{option(prot)}
 @c ---------
 @item @code{notBuckets}
 @cindex notBuckets, option
 disables the bucket representation of polynomials during standard basis
-computations. This option usually decreases the memory usage but
+computations. This option usually decreases the memory consumption but
 increases the computation time. It should only be set for
 memory-critical standard basis computations.
-@c ---------
-@item @code{oldStd}
-@cindex oldStd, option
-uses a more lazy approach in std computations,
-which was used in @sc{Singular} version before 2-0
-(and which may lead to faster or slower computations, depending on the example)
 @c ---------
 @item @code{prot}
 @cindex prot, option
@@ -4647,6 +4707,10 @@ progress during the following computations:
 @anchor{option(redSB)}
 See below for more details.
 @c ---------
+@item @code{qringNF}
+@cindex qringNF, option
+simplifies always modulo the current @code{qring}.
+@c ---------
 @item @code{redSB}
 @cindex redSB, option
 @cindex reduced standard basis
@@ -4667,12 +4731,42 @@ orderings and not set for all other rings.
 @c ---------
 @item @code{sugarCrit}
 @cindex sugarCrit, option
-uses criteria similar to the homogeneous case to keep more useless pairs.
+uses criteria similar to the homogeneous case to keep more pairs which would be
+excluded by other criteria but which may be useful for downstream computations.
 @c ---------
 @item @code{weightM}
 @cindex weightM, option
 automatically computes suitable weights for the weighted ecart and the
 weighted sugar method.
+@c ---------
+@item @code{cancelunit}
+@cindex cancelunit, option
+avoids to divide polynomials by non-constant units in @code{std} in the local case. Should usually not be used.
+@c ---------
+@item @code{contentSB}
+@cindex contentSB, option
+avoids to divide by the content of a polynomial in @code{std} and related
+algorithms. Should usually not be used.
+@c ---------
+@c @item @code{modpsolve}
+@c @cindex modpsolve, option
+@c used by @code{slimgb}. undocumented.
+@c Should usually not be used.
+@c ---------
+@c @item @code{geometricSB}
+@c @cindex geometricSB, option
+@c used by @code{slimgb}. undocumented.
+@c Should usually not be used.
+@c ---------
+@c @item @code{findMonomials}
+@c @cindex findMonomials, option
+@c used by @code{slimgb}. undocumented.
+@c Should usually not be used.
+@c ---------
+@c @item @code{coefStrat}
+@c @cindex coefStrat, option
+@c used by @code{slimgb}. undocumented.
+@c Should usually not be used.
 @c ---------
 @end table
 @*
@@ -4693,18 +4787,24 @@ The last set of options controls the output of @sc{Singular}:
 @item @code{Imap}
 @cindex Imap, option
 shows the mapping of variables with the fetch and imap commands.
+@item @code{debugLib}
+@cindex debugLib, option
+warns about syntax errors when loading a library.
+@item @code{defRes}
+@cindex defRes, option
+shows the names of the syzygy modules while converting @code{resolution} to @code{list}
 @item @code{loadLib}
 @cindex loadLib, option
 shows loading of libraries (set by default).
-@item @code{debugLib}
-@cindex debugLib, option
-warns about syntax errors during loading of libraries.
 @item @code{loadProc}
 @cindex loadProc, option
 shows loading of procedures from libraries.
 @item @code{mem}
 @cindex mem, option
 shows memory usage in square brackets (see @ref{memory}).
+@item @code{notWarnSB}
+@cindex notWarnSB, option
+do not warn about using a generating set instead of a standard basis.
 @item @code{prompt}
 @cindex prompt, option
 shows prompt (@code{>}, resp.@: @code{.}) if ready for input (default).
@@ -6541,6 +6641,10 @@ resolution.
 @cindex system, browsers
 returns a string about available help browsers.
 @xref{The online help system}.
+@cindex cpu
+@cindex system, cpu
+returns the number of cpus as int (for creating multiple threads/processes).
+@item @code{system("pid")}
 @end table
 @item @strong{Example:}
 @smallexample

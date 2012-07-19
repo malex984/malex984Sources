@@ -16,6 +16,7 @@
 
 #include "mod2.h"
 #include "tok.h"
+#include "options.h"
 #include "ipid.h"
 #include "intvec.h"
 #include "omalloc.h"
@@ -54,6 +55,7 @@
 #include "tgb.h"
 #include "walkProc.h"
 #include "mod_raw.h"
+#include "MinorInterface.h"
 #ifdef HAVE_FACTORY
 #include "clapsing.h"
 #include "kstdfac.h"
@@ -99,6 +101,16 @@ struct sValCmdTab
 };
 
 typedef sValCmdTab jjValCmdTab[];
+
+struct _scmdnames
+{
+  char *name;
+  short alias;
+  short tokval;
+  short toktype;
+};
+typedef struct _scmdnames cmdnames;
+
 
 /* ifdef GENTABLE: definitions are in ipshell.h */
 #ifndef GENTABLE
@@ -305,12 +317,13 @@ cmdnames cmds[] =
   { "maxideal",    0, MAXID_CMD ,         CMD_1},
   { "memory",      0, MEMORY_CMD ,        CMD_1},
   { "minbase",     0, MINBASE_CMD ,       CMD_1},
-  { "minor",       0, MINOR_CMD ,         CMD_23},
+  { "minor",       0, MINOR_CMD ,         CMD_M},
   { "minres",      0, MINRES_CMD ,        CMD_1},
   { "mod",         0, INTMOD_CMD ,        MULDIV_OP},
   { "module",      0, MODUL_CMD ,         MODUL_CMD},
   { "modulo",      0, MODULO_CMD ,        CMD_2},
   { "monitor",     0, MONITOR_CMD ,       CMD_12},
+  { "monomial",    0, MONOM_CMD ,         CMD_1},
   { "mpresmat",    0, MPRES_CMD,          CMD_2},
   { "mult",        0, MULTIPLICITY_CMD ,  CMD_1},
   #ifdef OLD_RES
@@ -1093,6 +1106,18 @@ static BOOLEAN jjTIMES_IV(leftv res, leftv u, leftv v)
     return jjOP_REST(res,u,v);
   return FALSE;
 }
+static BOOLEAN jjTIMES_MA_BI1(leftv res, leftv u, leftv v)
+{
+  number n=nInit_bigint((number)v->Data());
+  poly p=pNSet(n);
+  ideal I= (ideal)mpMultP((matrix)u->CopyD(MATRIX_CMD),p);
+  res->data = (char *)I;
+  return FALSE;
+}
+static BOOLEAN jjTIMES_MA_BI2(leftv res, leftv u, leftv v)
+{
+  return jjTIMES_MA_BI1(res,v,u);
+}
 static BOOLEAN jjTIMES_MA_P1(leftv res, leftv u, leftv v)
 {
   poly p=(poly)v->CopyD(POLY_CMD);
@@ -1110,8 +1135,7 @@ static BOOLEAN jjTIMES_MA_P2(leftv res, leftv u, leftv v)
 static BOOLEAN jjTIMES_MA_N1(leftv res, leftv u, leftv v)
 {
   number n=(number)v->CopyD(NUMBER_CMD);
-  poly p=pOne();
-  pSetCoeff(p,n);
+  poly p=pNSet(n);
   res->data = (char *)mpMultP((matrix)u->CopyD(MATRIX_CMD),p);
   idNormalize((ideal)res->data);
   return FALSE;
@@ -2530,11 +2554,6 @@ static BOOLEAN jjLOAD_E(leftv res, leftv v, leftv u)
   WerrorS("load(\"libname\" [,\"with\"]);");
   return TRUE;
 }
-static BOOLEAN jjMINOR(leftv res, leftv u, leftv v)
-{
-  res->data = (char *)idMinors((matrix)u->Data(),(int)(long)v->Data());
-  return (res->data==NULL);
-}
 static BOOLEAN jjMODULO(leftv res, leftv u, leftv v)
 {
   intvec *w_u=(intvec *)atGet(u,"isHomog",INTVEC_CMD);
@@ -2650,6 +2669,30 @@ static BOOLEAN jjMONITOR2(leftv res, leftv u,leftv v)
     monitor(NULL,0);
   return FALSE;
 #endif
+}
+static BOOLEAN jjMONOM(leftv res, leftv v)
+{
+  intvec *iv=(intvec *)v->Data();
+  poly p=pOne();
+  int i,e;
+  BOOLEAN err=FALSE;
+  for(i=si_min(pVariables,iv->length()); i>0; i--)
+  {
+    e=(*iv)[i-1];
+    if (e>=0) pSetExp(p,i,e);
+    else err=TRUE;
+  }
+  if (iv->length()==(pVariables+1))
+  {
+    res->rtyp=VECTOR_CMD;
+    e=(*iv)[pVariables];
+    if (e>=0) pSetComp(p,e);
+    else err=TRUE;
+  }
+  pSetm(p);
+  res->data=(char*)p;
+  if(err) { pDelete(&p); WerrorS("no negative exponent allowed"); }
+  return err;
 }
 static BOOLEAN jjPARSTR2(leftv res, leftv u, leftv v)
 {
@@ -3003,7 +3046,7 @@ static BOOLEAN jjRES(leftv res, leftv u, leftv v)
     if (weights!=NULL)
     {
       atSet(res,omStrDup("isHomog"),ivCopy(weights),INTVEC_CMD);
-      r->weights = (intvec**)omAlloc0Bin(void_ptr_bin);
+      r->weights = (intvec**)omAlloc0Bin(char_ptr_bin);
       (r->weights)[0] = ivCopy(weights);
     }
 //#endif
@@ -3322,6 +3365,8 @@ struct sValCmd2 dArith2[]=
 ,{jjOP_IM_I,   '-',            INTMAT_CMD,     INTMAT_CMD, INT_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjMINUS_IV,  '-',            INTVEC_CMD,     INTVEC_CMD, INTVEC_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjMINUS_IV,  '-',            INTMAT_CMD,     INTMAT_CMD, INTMAT_CMD, ALLOW_PLURAL | ALLOW_RING}
+,{jjWRONG2,    '-',            NONE,           IDEAL_CMD,  IDEAL_CMD, ALLOW_PLURAL | ALLOW_RING}
+,{jjWRONG2,    '-',            NONE,           MODUL_CMD,  MODUL_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjTIMES_I,   '*',            INT_CMD,        INT_CMD,    INT_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjTIMES_BI,  '*',            BIGINT_CMD,     BIGINT_CMD, BIGINT_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjTIMES_N,   '*',            NUMBER_CMD,     NUMBER_CMD, NUMBER_CMD, ALLOW_PLURAL | ALLOW_RING}
@@ -3342,6 +3387,8 @@ struct sValCmd2 dArith2[]=
 ,{jjTIMES_MA_I1,'*',           MATRIX_CMD,     MATRIX_CMD, INT_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjTIMES_MA_I2,'*',           MATRIX_CMD,     INT_CMD,    MATRIX_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjTIMES_MA,  '*',            MATRIX_CMD,     MATRIX_CMD, MATRIX_CMD, ALLOW_PLURAL | ALLOW_RING}
+,{jjTIMES_MA_BI1,'*',          MATRIX_CMD,     MATRIX_CMD, BIGINT_CMD, ALLOW_PLURAL | ALLOW_RING}
+,{jjTIMES_MA_BI2,'*',          MATRIX_CMD,     BIGINT_CMD, MATRIX_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjOP_IV_I,   '*',            INTVEC_CMD,     INTVEC_CMD, INT_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjOP_I_IV,   '*',            INTVEC_CMD,     INT_CMD,    INTVEC_CMD, ALLOW_PLURAL | ALLOW_RING}
 ,{jjOP_IV_I,   '*',            INTMAT_CMD,     INTMAT_CMD, INT_CMD, ALLOW_PLURAL | ALLOW_RING}
@@ -3573,7 +3620,6 @@ struct sValCmd2 dArith2[]=
 ,{jjCALL2MANY, LIST_CMD,       LIST_CMD,       DEF_CMD,    DEF_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjLOAD_E,    LOAD_CMD,       NONE,           STRING_CMD, STRING_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjRES,       LRES_CMD,       RESOLUTION_CMD, IDEAL_CMD,  INT_CMD, NO_PLURAL |NO_RING}
-,{jjMINOR,     MINOR_CMD,      IDEAL_CMD,      MATRIX_CMD, INT_CMD, NO_PLURAL |ALLOW_RING}
 ,{jjCALL2MANY, MODUL_CMD,      MODUL_CMD,      DEF_CMD,    DEF_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjMODULO,    MODULO_CMD,     MODUL_CMD,      IDEAL_CMD,  IDEAL_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjMODULO,    MODULO_CMD,     MODUL_CMD,      MODUL_CMD,  MODUL_CMD, ALLOW_PLURAL |ALLOW_RING}
@@ -3793,9 +3839,7 @@ static BOOLEAN jjBI2P(leftv res, leftv u)
     if (nIsZero(n)) { res->data=NULL;nDelete(&n); }
     else
     {
-      poly p=pOne();
-      pSetCoeff(p,n);
-      res->data=(void *)p;
+      res->data=(void *)pNSet(n);
     }
   }
   return bo;
@@ -4806,11 +4850,16 @@ static BOOLEAN jjTRANSP_IV(leftv res, leftv v)
 static BOOLEAN jjOPPOSITE(leftv res, leftv a)
 {
   ring    r = (ring)a->Data();
-  if (rIsPluralRing(r))
+  //if (rIsPluralRing(r))
+  if (r->OrdSgn==1)
   {
     res->data = rOpposite(r);
   }
-  else res->data = rCopy(r);
+  else
+  {
+    WarnS("opposite only for global orderings");
+    res->data = rCopy(r);
+  }
   return FALSE;
 }
 static BOOLEAN jjENVELOPE(leftv res, leftv a)
@@ -5364,6 +5413,7 @@ struct sValCmd1 dArith1[]=
 ,{jjMINRES_R,   MINRES_CMD,      RESOLUTION_CMD, RESOLUTION_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjDUMMY,      MODUL_CMD,       MODUL_CMD,      MODUL_CMD     , ALLOW_PLURAL |ALLOW_RING}
 ,{jjMONITOR1,   MONITOR_CMD,     NONE,           LINK_CMD      , ALLOW_PLURAL |ALLOW_RING}
+,{jjMONOM,      MONOM_CMD,       POLY_CMD,       INTVEC_CMD    , ALLOW_PLURAL |ALLOW_RING}
 ,{jjMULT,       MULTIPLICITY_CMD,  INT_CMD,      IDEAL_CMD     , NO_PLURAL |ALLOW_RING}
 ,{jjMULT,       MULTIPLICITY_CMD,  INT_CMD,      MODUL_CMD     , NO_PLURAL |ALLOW_RING}
 ,{jjMSTD,       MSTD_CMD,        LIST_CMD,       IDEAL_CMD     , NO_PLURAL |ALLOW_RING}
@@ -5929,11 +5979,189 @@ static BOOLEAN jjJET_ID_M(leftv res, leftv u, leftv v, leftv w)
                                (matrix)v->CopyD());
   return FALSE;
 }
-static BOOLEAN jjMINOR3(leftv res, leftv u, leftv v, leftv w)
+static BOOLEAN currRingIsOverIntegralDomain ()
 {
-  assumeStdFlag(w);
-  res->data = (char *)idMinors(
-                        (matrix)u->Data(),(int)(long)v->Data(),(ideal)w->Data());
+  /* true for fields and Z, false otherwise */
+  if (rField_is_Ring_PtoM()) return FALSE;
+  if (rField_is_Ring_2toM()) return FALSE;
+  if (rField_is_Ring_ModN()) return FALSE;
+  return TRUE;
+}
+static BOOLEAN jjMINOR_M(leftv res, leftv v)
+{
+  /* Here's the use pattern for the minor command:
+        minor ( matrix_expression m, int_expression minorSize,
+                optional ideal_expression IasSB, optional int_expression k,
+                optional string_expression algorithm,
+                optional int_expression cachedMinors,
+                optional int_expression cachedMonomials )
+     This method here assumes that there are at least two arguments.
+     - If IasSB is present, it must be a std basis. All minors will be
+       reduced w.r.t. IasSB.
+     - If k is absent, all non-zero minors will be computed.
+       If k is present and k > 0, the first k non-zero minors will be
+       computed.
+       If k is present and k < 0, the first |k| minors (some of which
+       may be zero) will be computed.
+       If k is present and k = 0, an error is reported.
+     - If algorithm is absent, all the following arguments must be absent too.
+       In this case, a heuristic picks the best-suited algorithm (among
+       Bareiss, Laplace, and Laplace with caching).
+       If algorithm is present, it must be one of "Bareiss", "bareiss",
+       "Laplace", "laplace", "Cache", "cache". In the cases "Cache" and
+       "cache" two more arguments may be given, determining how many entries
+       the cache may have at most, and how many cached monomials there are at
+       most. (Cached monomials are counted over all cached polynomials.)
+       If these two additional arguments are not provided, 200 and 100000
+       will be used as defaults.
+  */
+  matrix m;
+  leftv u=v->next;
+  v->next=NULL;
+  int v_typ=v->Typ();
+  if (v_typ==MATRIX_CMD)
+  {
+     m = (const matrix)v->Data();
+  }
+  else
+  {
+    if (v_typ==0)
+    {
+      Werror("`%s` is undefined",v->Fullname());
+      return TRUE;
+    }
+    // try to convert to MATRIX:
+    int ii=iiTestConvert(v_typ,MATRIX_CMD);
+    BOOLEAN bo;
+    sleftv tmp;
+    if (ii>0) bo=iiConvert(v_typ,MATRIX_CMD,ii,v,&tmp);
+    else bo=TRUE;
+    if (bo)
+    { 
+      Werror("cannot convert %s to matrix",Tok2Cmdname(v_typ));
+      return TRUE;
+    }
+    m=(matrix)tmp.data;
+  }
+  const int mk = (const int)(long)u->Data();
+  bool noIdeal = true; bool noK = true; bool noAlgorithm = true;
+  bool noCacheMinors = true; bool noCacheMonomials = true;
+  ideal IasSB; int k; char* algorithm; int cacheMinors; int cacheMonomials;
+  
+  /* here come the different cases of correct argument sets */
+  if ((u->next != NULL) && (u->next->Typ() == IDEAL_CMD))
+  {
+    IasSB = (ideal)u->next->Data();
+    noIdeal = false;
+    if ((u->next->next != NULL) && (u->next->next->Typ() == INT_CMD))
+    {
+      k = (int)(long)u->next->next->Data();
+      noK = false;
+      assume(k != 0);
+      if ((u->next->next->next != NULL) && (u->next->next->next->Typ() == STRING_CMD))
+      {
+        algorithm = (char*)u->next->next->next->Data();
+        noAlgorithm = false;
+        if ((u->next->next->next->next != NULL) && (u->next->next->next->next->Typ() == INT_CMD))
+        {
+          cacheMinors = (int)(long)u->next->next->next->next->Data();
+          noCacheMinors = false;
+          if ((u->next->next->next->next->next != NULL) && (u->next->next->next->next->next->Typ() == INT_CMD))
+          {
+            cacheMonomials = (int)(long)u->next->next->next->next->next->Data();
+            noCacheMonomials = false;
+          }
+        }
+      }
+    }
+  }
+  else if ((u->next != NULL) && (u->next->Typ() == INT_CMD))
+  {
+    k = (int)(long)u->next->Data();
+    noK = false;
+    assume(k != 0);
+    if ((u->next->next != NULL) && (u->next->next->Typ() == STRING_CMD))
+    {
+      algorithm = (char*)u->next->next->Data();
+      noAlgorithm = false;
+      if ((u->next->next->next != NULL) && (u->next->next->next->Typ() == INT_CMD))
+      {
+        cacheMinors = (int)(long)u->next->next->next->Data();
+        noCacheMinors = false;
+        if ((u->next->next->next->next != NULL) && (u->next->next->next->next->Typ() == INT_CMD))
+        {
+          cacheMonomials = (int)(long)u->next->next->next->next->Data();
+          noCacheMonomials = false;
+        }
+      }
+    }
+  }
+  else if ((u->next != NULL) && (u->next->Typ() == STRING_CMD))
+  {
+    algorithm = (char*)u->next->Data();
+    noAlgorithm = false;
+    if ((u->next->next != NULL) && (u->next->next->Typ() == INT_CMD))
+    {
+      cacheMinors = (int)(long)u->next->next->Data();
+      noCacheMinors = false;
+      if ((u->next->next->next != NULL) && (u->next->next->next->Typ() == INT_CMD))
+      {
+        cacheMonomials = (int)(long)u->next->next->next->Data();
+        noCacheMonomials = false;
+      }
+    }
+  }
+  
+  /* upper case conversion for the algorithm if present */
+  if (!noAlgorithm)
+  {
+    if (strcmp(algorithm, "bareiss") == 0)
+      algorithm = (char*)"Bareiss";
+    if (strcmp(algorithm, "laplace") == 0)
+      algorithm = (char*)"Laplace";
+    if (strcmp(algorithm, "cache") == 0)
+      algorithm = (char*)"Cache";
+  }
+
+  v->next=u;
+  /* here come some tests */
+  if (!noIdeal)
+  {
+    assumeStdFlag(u->next);
+  }
+  if ((!noK) && (k == 0))
+  {
+    WerrorS("Provided number of minors to be computed is zero.");
+    return TRUE;
+  }
+  if ((!noAlgorithm) && (strcmp(algorithm, "Bareiss") != 0)
+      && (strcmp(algorithm, "Laplace") != 0) && (strcmp(algorithm, "Cache") != 0))
+  {
+    WerrorS("Expected as algorithm one of 'B/bareiss', 'L/laplace', or 'C/cache'.");
+    return TRUE;
+  }
+  if ((!noAlgorithm) && (strcmp(algorithm, "Bareiss") == 0)
+      && (!currRingIsOverIntegralDomain()))
+  {
+    WerrorS("Bareiss algorithm not defined over coefficient rings with zero divisors.");
+    return TRUE;
+  }
+  if ((!noAlgorithm) && (strcmp(algorithm, "Cache") == 0)
+      && (noCacheMinors || noCacheMonomials))
+  {
+    cacheMinors = 200;
+    cacheMonomials = 100000;
+  }
+
+  /* here come the actual procedure calls */
+  if (noAlgorithm)
+    res->data = getMinorIdealHeuristic(m, mk, (noK ? 0 : k), (noIdeal ? 0 : IasSB), false);
+  else if (strcmp(algorithm, "Cache") == 0)
+    res->data = getMinorIdealCache(m, mk, (noK ? 0 : k), (noIdeal ? 0 : IasSB), 3, cacheMinors, cacheMonomials, false);
+  else
+    res->data = getMinorIdeal(m, mk, (noK ? 0 : k), algorithm, (noIdeal ? 0 : IasSB), false);
+  if (v_typ!=MATRIX_CMD) idDelete((ideal *)&m);
+  res->rtyp = IDEAL_CMD;
   return FALSE;
 }
 static BOOLEAN jjPREIMAGE(leftv res, leftv u, leftv v, leftv w)
@@ -6257,7 +6485,7 @@ static BOOLEAN jjRES3(leftv res, leftv u, leftv v, leftv w)
       }
       else
       {
-        weights = (intvec**)omAlloc0Bin(void_ptr_bin);
+        weights = (intvec**)omAlloc0Bin(char_ptr_bin);
         weights[0] = ivCopy(iv);
       }
     }
@@ -6378,7 +6606,6 @@ struct sValCmd3 dArith3[]=
 ,{jjMATRIX_Id,      MATRIX_CMD, MATRIX_CMD, IDEAL_CMD,  INT_CMD,    INT_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjMATRIX_Mo,      MATRIX_CMD, MATRIX_CMD, MODUL_CMD,  INT_CMD,    INT_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{jjMATRIX_Ma,      MATRIX_CMD, MATRIX_CMD, MATRIX_CMD, INT_CMD,    INT_CMD, ALLOW_PLURAL |ALLOW_RING}
-,{jjMINOR3,         MINOR_CMD,  IDEAL_CMD,  MATRIX_CMD, INT_CMD,    IDEAL_CMD, NO_PLURAL |ALLOW_RING}
 ,{jjCALL3MANY,      MODUL_CMD,  MODUL_CMD,  DEF_CMD,    DEF_CMD,    DEF_CMD, ALLOW_PLURAL |ALLOW_RING}
 #ifdef OLD_RES
 ,{jjRES3,           MRES_CMD,   NONE,       IDEAL_CMD,  INT_CMD,    ANY_TYPE, ALLOW_PLURAL |ALLOW_RING}
@@ -6613,8 +6840,7 @@ static BOOLEAN jjIDEAL_PL(leftv res, leftv v)
         number n=nInit((int)(long)h->Data());
         if (!nIsZero(n))
         {
-          p=pOne();
-          pSetCoeff(p,n);
+          p=pNSet(n);
         }
         else
         {
@@ -6629,8 +6855,7 @@ static BOOLEAN jjIDEAL_PL(leftv res, leftv v)
         number n=nInit_bigint(b);
         if (!nIsZero(n))
         {
-          p=pOne();
-          pSetCoeff(p,n);
+          p=pNSet(n);
         }
         else
         {
@@ -6644,8 +6869,7 @@ static BOOLEAN jjIDEAL_PL(leftv res, leftv v)
         number n=(number)h->CopyD(NUMBER_CMD);
         if (!nIsZero(n))
         {
-          p=pOne();
-          pSetCoeff(p,n);
+          p=pNSet(n);
         }
         else
         {
@@ -7240,6 +7464,8 @@ struct sValCmdM dArithM[]=
 ,{jjCALL3ARG,  JET_CMD,         POLY_CMD,/*or set by p*/ 3  , ALLOW_PLURAL |ALLOW_RING}
 ,{jjJET4,      JET_CMD,         POLY_CMD,/*or set by p*/ 4  , ALLOW_PLURAL |ALLOW_RING}
 ,{jjLIST_PL,   LIST_CMD,        LIST_CMD,           -1      , ALLOW_PLURAL |ALLOW_RING}
+,{jjWRONG,     MINOR_CMD,       NONE,               1       , ALLOW_PLURAL |ALLOW_RING}
+,{jjMINOR_M,   MINOR_CMD,       IDEAL_CMD,          -2      , ALLOW_PLURAL |ALLOW_RING}
 ,{jjCALL1ARG,  MODUL_CMD,       MODUL_CMD,          1       , ALLOW_PLURAL |ALLOW_RING}
 ,{jjIDEAL_PL,  MODUL_CMD,       MODUL_CMD,          -1      , ALLOW_PLURAL |ALLOW_RING}
 ,{jjCALL1ARG,  NAMES_CMD,       LIST_CMD,            1      , ALLOW_PLURAL |ALLOW_RING}
@@ -7887,7 +8113,7 @@ BOOLEAN iiExprArith2(leftv res, leftv a, int op, leftv b, BOOLEAN proccall)
     if (siq>0)
     {
       //Print("siq:%d\n",siq);
-      command d=(command)omAlloc0Bin(ip_command_bin);
+      command d=(command)omAlloc0Bin(sip_command_bin);
       memcpy(&d->arg1,a,sizeof(sleftv));
       //a->Init();
       memcpy(&d->arg2,b,sizeof(sleftv));
@@ -8097,7 +8323,7 @@ BOOLEAN iiExprArith1(leftv res, leftv a, int op)
     if (siq>0)
     {
       //Print("siq:%d\n",siq);
-      command d=(command)omAlloc0Bin(ip_command_bin);
+      command d=(command)omAlloc0Bin(sip_command_bin);
       memcpy(&d->arg1,a,sizeof(sleftv));
       //a->Init();
       d->op=op;
@@ -8274,7 +8500,7 @@ BOOLEAN iiExprArith3(leftv res, int op, leftv a, leftv b, leftv c)
     if (siq>0)
     {
       //Print("siq:%d\n",siq);
-      command d=(command)omAlloc0Bin(ip_command_bin);
+      command d=(command)omAlloc0Bin(sip_command_bin);
       memcpy(&d->arg1,a,sizeof(sleftv));
       //a->Init();
       memcpy(&d->arg2,b,sizeof(sleftv));
@@ -8481,7 +8707,7 @@ BOOLEAN iiExprArithM(leftv res, leftv a, int op)
     if (siq>0)
     {
       //Print("siq:%d\n",siq);
-      command d=(command)omAlloc0Bin(ip_command_bin);
+      command d=(command)omAlloc0Bin(sip_command_bin);
       d->op=op;
       res->data=(char *)d;
       if (a!=NULL)

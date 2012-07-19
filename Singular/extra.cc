@@ -159,6 +159,10 @@ extern "C" int setenv(const char *name, const char *value, int overwrite);
 //#include <python_wrapper.h>
 #endif
 
+#ifdef HAVE_VANISHING_IDEAL
+#include "VanishingIdeal.h"
+#endif // HAVE_VANISHING_IDEAL
+
 void piShowProcList();
 #ifndef MAKE_DISTRIBUTION
 static BOOLEAN jjEXTENDED_SYSTEM(leftv res, leftv h);
@@ -2233,6 +2237,96 @@ static BOOLEAN jjEXTENDED_SYSTEM(leftv res, leftv h)
       }
       else
         WerrorS("poly expected");
+    }
+    else
+#endif
+/*==================== vanishing ideal ======================*/
+#ifdef HAVE_VANISHING_IDEAL
+    /* Compile this code and type 'system("vanishingIdeal", "usage");'
+       to learn more about how to use the following code. */
+    if (strcmp(sys_cmd, "vanishingIdeal") == 0)
+    {
+      if ((h->Typ() == STRING_CMD) &&
+          (h->next  == NULL))
+      {
+        const char* mode = (const char*) h->Data();
+        res->rtyp = IDEAL_CMD;
+        if      (strcmp(mode, "usage")     == 0)
+        {
+          usageVanishingIdealCode();
+          res->rtyp = INT_CMD;
+          res->data = 0;
+        }
+        else if (strcmp(mode, "direct")    == 0)
+          res->data = gBForVanishingIdealDirect();
+        else if (strcmp(mode, "recursive") == 0)
+          res->data = gBForVanishingIdealRecursive();
+        else
+        {
+          PrintS("invalid usage: expected string parameter = 'usage' or 'direct' or 'recursive'");
+          PrintLn();
+          res->rtyp = INT_CMD;
+          res->data = 0;
+        }
+      }
+      else if ((h->Typ()       == STRING_CMD) &&
+               (h->next->Typ() == POLY_CMD)   &&
+               (h->next->next  == NULL))
+      {
+        const char* mode                  = (const char*)     h->Data();
+        const poly  f                     = (const poly)      h->next->Data();
+        if      (strcmp(mode, "normalForm") == 0)
+        {
+          res->rtyp = POLY_CMD;
+          res->data = normalForm(f);
+        }
+        else if (strcmp(mode, "isZeroFunction") == 0)
+        {
+          res->rtyp = INT_CMD;
+          res->data = (void*)(long)(isZeroFunction(f) ? 1 : 0);
+        }
+        else if (strcmp(mode, "nonZeroTuple") == 0)
+        {
+          res->rtyp = INTVEC_CMD;
+          intvec* iv = new intvec(1, currRing->N, 0);
+          int* theTuple = nonZeroTuple(f);
+          for (int i = 0; i < currRing->N; i++) (*iv)[i] = theTuple[i];
+          delete [] theTuple;
+          res->data = (void *)iv;
+        }
+        else
+        {
+          PrintS("invalid usage: expected string parameter = 'normalForm' or 'isZeroFunction' or 'nonZeroTuple'");
+          PrintLn();
+          res->rtyp = INT_CMD;
+          res->data = 0;
+        }
+      }
+      else if ((h->Typ()       == STRING_CMD) &&
+               (h->next->Typ() == INT_CMD)    &&
+               (h->next->next  == NULL))
+      {
+        const char* mode = (const char*)     h->Data();
+        const int   m    = (const int)(long) h->next->Data();
+        res->rtyp = INT_CMD;
+        res->data = 0;
+        if (strcmp(mode, "smarandache") == 0)
+        {
+          if (m >= 1)
+            res->data = (void*)(long)smarandache(m);
+          else
+          {
+            PrintS("invalid usage: expected positive integer");
+            PrintLn();
+          }
+        }
+        else
+        {
+          PrintS("invalid usage: expected string parameter = 'smarandache'");
+          PrintLn();
+        }
+      }
+      return FALSE;
     }
     else
 #endif

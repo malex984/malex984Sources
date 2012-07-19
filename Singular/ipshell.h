@@ -9,29 +9,21 @@
 */
 #include <stdio.h>
 #include "structs.h"
+#include "ideals.h"
 
 
-extern int  traceit ;
-#define TRACE_SHOW_PROC   1
-#define TRACE_SHOW_LINENO 2
-#define TRACE_SHOW_LINE   4
-#define TRACE_SHOW_RINGS  8
-#define TRACE_SHOW_LINE1  16
-#define TRACE_BREAKPOINT  32
-#define TRACE_TMP_BREAKPOINT  64
 extern leftv iiCurrArgs;
 extern idhdl iiCurrProc;
 extern int iiOp; /* the current operation*/
-extern int  myynest;
 extern const char *  currid;
 extern int     iiRETURNEXPR_len;
 extern sleftv *iiRETURNEXPR;
 #ifdef USE_IILOCALRING
 extern ring   *iiLocalRing;
 #endif
-extern cmdnames cmds[];
+//extern cmdnames cmds[];
 extern const char *lastreserved;
-extern const char *singular_date;
+extern const char *singular_date; /* tesths.cc, set by final compile */
 
 extern BOOLEAN yyInRingConstruction; /* 1: during ring construction */
 

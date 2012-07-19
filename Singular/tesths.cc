@@ -16,6 +16,7 @@
 #include <errno.h>
 #include "mod2.h"
 #include "tok.h"
+#include "options.h"
 #include "ipshell.h"
 #include "febase.h"
 #include "cntrlc.h"
@@ -90,6 +91,27 @@ int siInit(char *name)
 {
   // hack such that all shared' libs in the bindir are loaded correctly
   feInitResources(name);
+  iiInitArithmetic();
+
+  basePack=(package)omAlloc0(sizeof(*basePack));
+  currPack=basePack;
+  idhdl h;
+  h=enterid("Top", 0, PACKAGE_CMD, &IDROOT, TRUE);
+  IDPACKAGE(h)->language = LANG_TOP;
+  IDPACKAGE(h)=basePack;
+  currPackHdl=h;
+  basePackHdl=h;
+
+  slStandardInit();
+  myynest=0;
+  if (! feOptValue(FE_OPT_NO_STDLIB))
+  {
+    int vv=verbose;
+    verbose &= ~Sy_bit(V_LOAD_LIB);
+    iiLibCmd(omStrDup("standard.lib"), TRUE,TRUE,TRUE);
+    verbose=vv;
+  }
+  errorreported = 0;
 }
 #endif
 
@@ -187,7 +209,7 @@ int main(          /* main entry to Singular */
     currPackHdl=h;
     basePackHdl=h;
   }
-  if (BVERBOSE(0))
+  if (TEST_V_QUIET)
   {
     (printf)(
 "                     SINGULAR                             /"

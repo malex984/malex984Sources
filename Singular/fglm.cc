@@ -20,7 +20,7 @@
 
 #ifdef HAVE_FGLM
 #include "tok.h"
-#include "structs.h"
+#include "options.h"
 #include "polys.h"
 #include "ideals.h"
 #include "ring.h"
@@ -298,7 +298,7 @@ fglmProc( leftv result, leftv first, leftv second )
             {
                 // Now the settings are compatible with FGLM
                 assumeStdFlag( (leftv)ih );
-                if ( fglmzero( sourceRingHdl, sourceIdeal, destRingHdl, destIdeal, FALSE, (currQuotient != NULL) ) == FALSE )
+                if ( fglmzero( IDRING(sourceRingHdl), sourceIdeal, destRingHdl, destIdeal, FALSE, (currQuotient != NULL) ) == FALSE )
                     state= FglmNotReduced;
             }
         } else state= FglmNoIdeal;

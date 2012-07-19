@@ -179,7 +179,7 @@ inline void InitApIntLeftv(mpsr_leftv mlv, mpz_ptr apint)
   n->s = 3;
   memcpy(&(n->z), apint, sizeof(MP_INT));
   nlNormalize(n);
-  omFreeBin(apint, MP_INT_bin);
+  omFreeSize(apint, sizeof(MP_INT));
   mlv->lv = mpsr_InitLeftv(NUMBER_CMD, n);
 }
 
@@ -731,7 +731,7 @@ static mpsr_Status_t GetMapLeftv(MP_Link_pt link, MPT_Node_pt node,
     IDROOT = h;
   }
 
-  map m = (map) omAlloc0Bin(sip_smap_bin);
+  map m = (map) omAlloc0Bin(sip_sideal_bin);
   m->preimage = omStrDup(name);
   m->m = id->m;
   m->nrows = id->nrows;

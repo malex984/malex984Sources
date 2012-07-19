@@ -17,6 +17,7 @@
 #include "omalloc.h"
 #include "structs.h"
 #include "tok.h"
+#include "options.h"
 #include "febase.h"
 #include "cntrlc.h"
 #include "page.h"
@@ -201,7 +202,6 @@ struct soptionStruct optionStruct[]=
   {"returnSB",     Sy_bit(OPT_RETURN_SB),      ~Sy_bit(OPT_RETURN_SB)  },
   {"fastHC",       Sy_bit(OPT_FASTHC),         ~Sy_bit(OPT_FASTHC)  },
   /* 11-19 sort in L/T */
-  {"keepvars",     Sy_bit(OPT_KEEPVARS),       ~Sy_bit(OPT_KEEPVARS) },
   {"staircaseBound",Sy_bit(OPT_STAIRCASEBOUND),~Sy_bit(OPT_STAIRCASEBOUND)  },
   {"multBound",    Sy_bit(OPT_MULTBOUND),      ~Sy_bit(OPT_MULTBOUND)  },
   {"degBound",     Sy_bit(OPT_DEGBOUND),       ~Sy_bit(OPT_DEGBOUND)  },
@@ -228,7 +228,6 @@ struct soptionStruct verboseStruct[]=
   {"debugLib", Sy_bit(V_DEBUG_LIB), ~Sy_bit(V_DEBUG_LIB)  },
   {"loadProc", Sy_bit(V_LOAD_PROC), ~Sy_bit(V_LOAD_PROC)  },
   {"defRes",   Sy_bit(V_DEF_RES),   ~Sy_bit(V_DEF_RES)    },
-  {"debugMem", Sy_bit(V_DEBUG_MEM), ~Sy_bit(V_DEBUG_MEM)  },
   {"usage",    Sy_bit(V_SHOW_USE),  ~Sy_bit(V_SHOW_USE)   },
   {"Imap",     Sy_bit(V_IMAP),      ~Sy_bit(V_IMAP)       },
   {"prompt",   Sy_bit(V_PROMPT),    ~Sy_bit(V_PROMPT)     },
@@ -239,7 +238,8 @@ struct soptionStruct verboseStruct[]=
   {"modpsolve",Sy_bit(V_MODPSOLVSB),~Sy_bit(V_MODPSOLVSB)},
   {"geometricSB",Sy_bit(V_UPTORADICAL),~Sy_bit(V_UPTORADICAL)},
   {"findMonomials",Sy_bit(V_FINDMONOM),~Sy_bit(V_FINDMONOM)},
-  {"coefStrat",Sy_bit(V_COEFSTRAT),~Sy_bit(V_COEFSTRAT)},
+  {"coefStrat",Sy_bit(V_COEFSTRAT), ~Sy_bit(V_COEFSTRAT)},
+  {"qringNF",  Sy_bit(V_QRING),     ~Sy_bit(V_QRING)},
 /*special for "none" and also end marker for showOption:*/
   {"ne",         0,          0 }
 };
@@ -351,6 +351,8 @@ BOOLEAN setOption(leftv res, leftv v)
         verbose |= verboseStruct[i].setval;
         #ifdef YYDEBUG
         #if YYDEBUG
+        /*debugging the bison grammar --> grammar.cc*/
+        extern int    yydebug;
         if (BVERBOSE(V_YACC)) yydebug=1;
         else                  yydebug=0;
         #endif
@@ -363,6 +365,8 @@ BOOLEAN setOption(leftv res, leftv v)
         verbose &= verboseStruct[i].resetval;
         #ifdef YYDEBUG
         #if YYDEBUG
+        /*debugging the bison grammar --> grammar.cc*/
+        extern int    yydebug;
         if (BVERBOSE(V_YACC)) yydebug=1;
         else                  yydebug=0;
         #endif

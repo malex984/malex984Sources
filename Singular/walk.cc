@@ -49,8 +49,7 @@
 #include "mod2.h"
 #include "intvec.h"
 #include "cntrlc.h"
-#include "math.h"
-#include "structs.h"
+#include "options.h"
 #include "omalloc.h"
 #include "febase.h"
 #include "ipshell.h"
@@ -1944,7 +1943,7 @@ static void DefRingPar(intvec* va)
   int i, nv = currRing->N;
   int nb = rBlocks(currRing) + 1;
 
-  ring res=(ring)omAllocBin(ip_sring_bin);
+  ring res=(ring)omAllocBin(sip_sring_bin);
 
   memcpy4(res,currRing,sizeof(ip_sring));
 
@@ -2023,7 +2022,7 @@ static void DefRingParlp(void)
 {
   int i, nv = currRing->N;
 
-  ring r=(ring)omAllocBin(ip_sring_bin);
+  ring r=(ring)omAllocBin(sip_sring_bin);
 
   memcpy4(r,currRing,sizeof(ip_sring));
 

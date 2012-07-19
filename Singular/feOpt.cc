@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include "mod2.h"
 #include "feOpt.h"
+#if !defined(GENERATE_OPTION_INDEX) && !defined(ESINGULAR) && !defined(TSINGULAR)
+#include "options.h"
+#endif
 
 // Define here which cmd-line options are recognized
 struct fe_option feOptSpec[] =

@@ -15,6 +15,7 @@
 #include "mod2.h"
 #include "static.h"
 #include "tok.h"
+#include "options.h"
 #include "ipid.h"
 #include "omalloc.h"
 #include "febase.h"
@@ -612,6 +613,7 @@ BOOLEAN iiEStart(char* example, procinfo *pi)
     printf("entering example (level %d)\n",myynest);
   }
   myynest++;
+  iiRETURNEXPR[myynest].Init();
   err=yyparse();
   if (sLastPrinted.rtyp!=0)
   {

@@ -2120,6 +2120,9 @@ static proc loadme()
 
       exportto(Schreyer, Syzextra::SchreyerSyzygyNF);
       exportto(Schreyer, Syzextra::ComputeSyzygy);
+
+      exportto(Top, Syzextra::ClearContent);
+      exportto(Top, Syzextra::ClearDenominators);
     }
     else
     {
@@ -2164,6 +2167,9 @@ static proc loadme()
 
       exportto(Schreyer, Syzextra_g::SchreyerSyzygyNF);
       exportto(Schreyer, Syzextra_g::ComputeSyzygy);
+
+      exportto(Top, Syzextra_g::ClearContent);
+      exportto(Top, Syzextra_g::ClearDenominators);
     }
 
     exportto(Top, DetailedPrint);

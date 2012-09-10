@@ -2033,6 +2033,7 @@ void p_Content(poly ph, const ring r)
     n_ClearContent(itr, r->cf);
 
     assume( n_GreaterZero(pGetCoeff(ph),r->cf) );
+    if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
     
     return;
   }
@@ -2057,6 +2058,7 @@ void p_Content(poly ph, const ring r)
           pIter(h);
         }
         assume( n_GreaterZero(pGetCoeff(ph),r->cf) );
+        if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
       }
       n_Delete(&k,r->cf);
     }
@@ -2079,6 +2081,7 @@ void p_Content(poly ph, const ring r)
       CPolyCoeffsEnumerator itr(ph);
       n_ClearContent(itr, r->cf);
       assume( n_GreaterZero(pGetCoeff(ph),r->cf) );
+      if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
       return;
     }
 #endif
@@ -2467,6 +2470,7 @@ poly p_Cleardenom(poly ph, const ring r)
     n_ClearContent(itr, C); // divide out the content
 
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
     
     return start;
   }
@@ -2480,6 +2484,7 @@ poly p_Cleardenom(poly ph, const ring r)
   {
     p_Content(ph,r);
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
     return start;
   }
 #endif
@@ -2487,6 +2492,7 @@ poly p_Cleardenom(poly ph, const ring r)
   if (rField_is_Zp(r) && TEST_OPT_INTSTRATEGY)
   {
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
     return start;
   }
   p = ph;
@@ -2510,6 +2516,7 @@ poly p_Cleardenom(poly ph, const ring r)
       p_SetCoeff(p,n_Init(1,r->cf),r);
 
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
     
     return start;
   }
@@ -2522,6 +2529,7 @@ poly p_Cleardenom(poly ph, const ring r)
     n_ClearContent(itr, C); // divide out the content
 
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
     
     return start;
   }
@@ -2620,6 +2628,7 @@ poly p_Cleardenom(poly ph, const ring r)
   }
 
   assume( n_GreaterZero(pGetCoeff(ph),C) );
+  if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
   
   return start;
 }
@@ -2649,6 +2658,11 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
     n_Delete(&h, C);
 
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C))
+    {
+      ph = p_Neg(ph,r);
+      c = n_Neg(c, C);
+    }
     
     return;
   }
@@ -2660,6 +2674,11 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
     p_SetCoeff(p, n_Init(1, C), r);
 
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C))
+    {
+      ph = p_Neg(ph,r);
+      c = n_Neg(c, C);
+    }
     
     return;
   }
@@ -2677,6 +2696,11 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
     n_Delete(&h, C);
 
     assume( n_GreaterZero(pGetCoeff(ph),C) );
+    if(!n_GreaterZero(pGetCoeff(ph),C))
+    {
+      ph = p_Neg(ph,r);
+      c = n_Neg(c, C);
+    }
     
     return;
   }
@@ -2769,6 +2793,12 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
   }
 
   assume( n_GreaterZero(pGetCoeff(ph),C) );
+  if(!n_GreaterZero(pGetCoeff(ph),C))
+  {
+    ph = p_Neg(ph,r);
+    c = n_Neg(c, C);
+  }
+  
 }
 
 number p_GetAllDenom(poly ph, const ring r)

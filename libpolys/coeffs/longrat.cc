@@ -2758,7 +2758,6 @@ static void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
   cand->s=3;
 
   int s=0;
-//  mpz_t tmp; mpz_init(tmp); // tmp = GMP int
   
   int lc_is_pos=nlGreaterZero(numberCollectionEnumerator.Current(),cf);
 
@@ -2780,14 +2779,6 @@ static void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
         else // we have already something
         {
           mpz_lcm(cand->z, cand->z, cand1->n);
-/*                  
-          mpz_gcd(tmp,cand->z,cand1->n); // tmp = GCD( cand->z, cand1->n )
-          
-          if (mpz_cmp_si(tmp,1)!=0) 
-            mpz_divexact(cand->z,cand->z,tmp); // cand->z /= tmp
-          
-          mpz_mul(cand->z,cand->z,cand1->n); // cand->z *= cand1->n
-*/
         }
       }
     }

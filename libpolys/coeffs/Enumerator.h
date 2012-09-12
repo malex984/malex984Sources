@@ -56,6 +56,7 @@ class IBaseEnumerator // IDisposable
     virtual ~IBaseEnumerator() {} // TODO: needed?
 
   private:
+    /// disable copy constructor and assigment operator
     IBaseEnumerator(const IBaseEnumerator&);
     void operator=(const IBaseEnumerator&);
 

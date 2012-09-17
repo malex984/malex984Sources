@@ -2660,8 +2660,7 @@ static void nlClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   int s1,s;
   s=2147483647; // max. int
 
-  
-  int lc_is_pos=nlGreaterZero(numberCollectionEnumerator.Current(),cf);
+  const BOOLEAN lc_is_pos=nlGreaterZero(numberCollectionEnumerator.Current(),cf);
 
   int normalcount = 0;
   do
@@ -2759,7 +2758,7 @@ static void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
 
   int s=0;
   
-  int lc_is_pos=nlGreaterZero(numberCollectionEnumerator.Current(),cf);
+  const BOOLEAN lc_is_pos=nlGreaterZero(numberCollectionEnumerator.Current(),cf);
 
   do
   {

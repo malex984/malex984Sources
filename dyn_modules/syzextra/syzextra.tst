@@ -45,10 +45,17 @@ def l = res(I, 0); DetailedPrint(l);
 
 
 
+proc NegativeNumber(number c)
+{
+  string s = sprintf("(%s)", c); int i = 1;
+  
+  // cannot run ouside of s (with '(((('), right?
+  while( s[i] == "(" || s[i] == " " ) { i++; };
 
-ring R = 0, (x), dp;
+  // now should either sign or digit or letter come, right?
+  return (s[i] == "-" );
+}
 
-// // clearcontent:
 
 proc TestClearContent(def i, number c, def o)
 {
@@ -57,7 +64,7 @@ proc TestClearContent(def i, number c, def o)
   int pass = 1;
   number @c = ClearContent(i);
 
-  if( leadcoef(i) < 0 )
+  if( NegativeNumber(leadcoef(i)) )
   {
     "ERROR: negative leading coeff. after clearing  content: ", leadcoef(i), " instead of ", leadcoef(o);
     pass = 0;
@@ -78,6 +85,7 @@ proc TestClearContent(def i, number c, def o)
     "[TestClearContent -- PASSED]";
   } else
   {
+    basering;
     ERROR("[TestClearContent -- FAILED]");
   }
   ""; 
@@ -91,7 +99,8 @@ proc TestClearDenominators(def i, number c, def o)
   "Test: ClearDenominators(", i, " --?-> ", o, " / => ", c, "): ";
   int pass = 1;
   number @c = ClearDenominators(i);
-  if( leadcoef(i) < 0 )
+  
+  if( NegativeNumber(leadcoef(i)) )
   {
     "ERROR: negative leading coeff. after clearing denominators: ", leadcoef(i), " instead of ", leadcoef(o);
     pass = 0;
@@ -120,18 +129,21 @@ proc TestClearDenominators(def i, number c, def o)
     "[TestClearDenominators -- PASSED]";
   } else
   {
+    basering;
     ERROR("[TestClearDenominators -- FAILED]");
   }
   ""; 
 }
 
+proc TestClearRingX(poly X)
+{
+// // clearcontent:
 
-
-// with polynomials in 'x'
+// with polynomials in 'X'
 TestClearContent(poly(1), number(1), poly(1)); // {1} -> {1}, c=1
 TestClearContent(poly(2), number(2), poly(1)); // {2} -> {1}, c=2
-TestClearContent(poly(222222222222x + 2), number(2), poly(111111111111x + 1)); // {222222222222, 2 } -> { 111111111111, 1} c=2
-TestClearContent(poly(2x + 222222222222), number(2), poly(1x + 111111111111)); // {2, 222222222222 } -> { 1, 111111111111} c=2
+TestClearContent(poly(222222222222*X + 2), number(2), poly(111111111111*X + 1)); // {222222222222, 2 } -> { 111111111111, 1} c=2
+TestClearContent(poly(2*X + 222222222222), number(2), poly(1*X + 111111111111)); // {2, 222222222222 } -> { 1, 111111111111} c=2
 
 // use vector instead:
 TestClearContent(vector(1), number(1), vector(1)); // {1} -> {1}, c=1
@@ -143,8 +155,8 @@ TestClearContent(vector([2, 222222222222]), number(2), vector([1, 111111111111])
 // with negative leading coeff!
 TestClearContent(-poly(1), -number(1), poly(1)); // {1} -> {1}, c=1
 TestClearContent(-poly(2), -number(2), poly(1)); // {2} -> {1}, c=2
-TestClearContent(-poly(222222222222x + 2), -number(2), poly(111111111111x + 1)); // {222222222222, 2 } -> { 111111111111, 1} c=2
-TestClearContent(-poly(2x + 222222222222), -number(2), poly(1x + 111111111111)); // {2, 222222222222 } -> { 1, 111111111111} c=2
+TestClearContent(-poly(222222222222*X + 2), -number(2), poly(111111111111*X + 1)); // {222222222222, 2 } -> { 111111111111, 1} c=2
+TestClearContent(-poly(2*X + 222222222222), -number(2), poly(1*X + 111111111111)); // {2, 222222222222 } -> { 1, 111111111111} c=2
 
 // use vector instead:
 TestClearContent(-vector(1), -number(1), vector(1)); // {1} -> {1}, c=1
@@ -157,10 +169,10 @@ TestClearContent(-vector([2, 222222222222]), -number(2), vector([1, 111111111111
 
 TestClearDenominators(poly(1), number(1), poly(1)); // {1} -> {1}, c=1
 TestClearDenominators(poly(2), number(1), poly(2)); // {2} -> {2}, c=1
-TestClearDenominators(poly(x + (1/2)), number(2), poly(2x + 1)); // {1, 1/2 } -> {2, 1}, c=2
-TestClearDenominators(poly(1/2x + 1), number(2), poly(x + 2)); // {1/2, 1} -> {1, 2}, c=2
-TestClearDenominators(poly(1/3x3+1/4x2+1/6x+1), number(12), poly(4x3+3x2+2x+12)); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
-TestClearDenominators(poly(1/2x3+1/4x2+3/2x+111111111111), number(4), poly(2x3+1x2+6x+444444444444)); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
+TestClearDenominators(poly(X + (1/2)), number(2), poly(2*X + 1)); // {1, 1/2 } -> {2, 1}, c=2
+TestClearDenominators(poly((1/2)*X + 1), number(2), poly(X + 2)); // {1/2, 1} -> {1, 2}, c=2
+TestClearDenominators(poly((1/3)*(X*X*X)+(1/4)*X*X+(1/6)*X+1), number(12), poly(4*X*X*X+3*X*X+2*X+12)); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
+TestClearDenominators(poly((1/2)*X*X*X+(1/4)*X*X+(3/2)*X+111111111111), number(4), poly(2*X*X*X+X*X+6*X+444444444444)); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
 
 
 
@@ -174,12 +186,11 @@ TestClearDenominators(vector([1/2,1/4,3/2,111111111111]), number(4), vector([2,1
 
 TestClearDenominators(-poly(1), -number(1), poly(1)); // {1} -> {1}, c=1
 TestClearDenominators(-poly(2), -number(1), poly(2)); // {2} -> {2}, c=1
-TestClearDenominators(-poly(x + (1/2)), -number(2), poly(2x + 1)); // {1, 1/2 } -> {2, 1}, c=2
-TestClearDenominators(-poly(1/2x + 1), -number(2), poly(x + 2)); // {1/2, 1} -> {1, 2}, c=2
-TestClearDenominators(-poly(1/3x3+1/4x2+1/6x+1), -number(12), poly(4x3+3x2+2x+12)); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
-TestClearDenominators(-poly(1/2x3+1/4x2+3/2x+111111111111), -number(4), poly(2x3+1x2+6x+444444444444)); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
 
-
+TestClearDenominators(-poly(X + (1/2)), -number(2), poly(2*X + 1)); // {1, 1/2 } -> {2, 1}, c=2
+TestClearDenominators(-poly((1/2)*X + 1), -number(2), poly(X + 2)); // {1/2, 1} -> {1, 2}, c=2
+TestClearDenominators(-poly((1/3)*(X*X*X)+(1/4)*X*X+(1/6)*X+1), -number(12), poly(4*X*X*X+3*X*X+2*X+12)); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
+TestClearDenominators(-poly((1/2)*X*X*X+(1/4)*X*X+(3/2)*X+111111111111), -number(4), poly(2*X*X*X+X*X+6*X+444444444444)); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
 
 TestClearDenominators(-vector([1]), -number(1), vector([1])); // {1} -> {1}, c=1
 TestClearDenominators(-vector([2]), -number(1), vector([2])); // {2} -> {2}, c=1
@@ -188,9 +199,23 @@ TestClearDenominators(-vector([1/2, 1]), -number(2), vector([1, 2])); // {1/2, 1
 TestClearDenominators(-vector([1/3,1/4,1/6,1]), -number(12), vector([4,3,2,12])); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
 TestClearDenominators(-vector([1/2,1/4,3/2,111111111111]), -number(4), vector([2,1,6,444444444444])); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
 
+}
 
+ring R = 0, (x), dp; 
+TestClearRingX(x);
+kill R;
 
-ring R = 0, (x, y, z), dp;
+ring R = 0, (x, y, z), dp; 
+TestClearRingX(x);
+TestClearRingX(y);
+TestClearRingX(z);
+
+TestClearRingX(xy);
+TestClearRingX(yz);
+TestClearRingX(xz);
+
+TestClearRingX(xyz);
+
 
 TestClearContent(poly(9x2y2z-18xyz2-18xyz+18z2+18z), number(9), poly(x2y2z-2xyz2-2xyz+2z2+2z)); // I[6]: Manual/Generalized_Hilbert_Syzygy_Theorem.tst
 TestClearContent(-poly(9x2y2z-18xyz2-18xyz+18z2+18z), -number(9), poly(x2y2z-2xyz2-2xyz+2z2+2z)); // -_
@@ -202,23 +227,39 @@ TestClearContent(-poly(4x3+2xy3), -number(2), poly(2x3+xy3)); // j[1]: Old/err3.
 TestClearContent(poly(2xy), number(2), poly(xy)); // _[2]: Manual/Delta.tst	
 TestClearContent(poly(6x2z+2y2z), number(2), poly(3x2z+y2z)); // _[3]: Manual/Delta.tst	
 
+kill R;
+ring R=0,(x,y),dp; 
+TestClearRingX(x);
+TestClearRingX(y);
+TestClearRingX(xy);
 
-
-
-ring r=0,(x,y),dp;
 TestClearDenominators(poly(1/2x2 + 1/3y), number(6), poly(6*(1/2x2 + 1/3y)));
 
 
-poly g = 1/2x2 + 1/3y; cleardenom(g);
+1/2x2 + 1/3y; cleardenom(_);
 
 
 
 
+kill R;
+ring R = (0,t), (x), dp; minpoly = t^2 + 1;
+TestClearRingX(x);
 
-// 
+// the following tests are wrong: t never appears in denominators (due to minpoly)
 // [(1/(2t)), 1] -> [1, (2t)], (2t)
-// trans. [((1/3)/(2t)), 1] -> [(1/3), (2t)], (2t) ???
+
+[(1/(2t)), 1];
+cleardenom(_);
+
+[((1/3)/(2t)), 1];
+cleardenom(_);
+
+// TestClearDenominators(vector([(1/(2t)), 1]), number(2t), vector([1, (2t)]));
 // alg:  [((1/3)/(2t)), 1] ->[1, (6t)], (6t) 
+// TestClearDenominators(vector([((1/3)/(2t)), 1]), number(6t), vector([1, (6t)])); 
+
+// trans. [((1/3)/(2t)), 1] -> [(1/3), (2t)], (2t) ???
+
 
 
 
@@ -307,6 +348,42 @@ gen(2)+(-1/6t)*gen(1)
 
 
 */
+
+
+kill R;
+ring R = (0,a), (x, y, z, u, v), (a(1, 2, 0, 0, 0), ws(1, 2, 3, 4, 5), C);
+minpoly = a2 + 1;
+
+R;
+//   characteristic : 0
+//   1 parameter    : a 
+//   minpoly        : (a2+1)
+//   number of vars : 5
+//        block   1 : ordering a
+//                  : names    x y z u v
+//                  : weights  1 2 0 0 0
+//        block   2 : ordering ws
+//                  : names    x y z u v
+//                  : weights  1 2 3 4 5
+//        block   3 : ordering C
+
+option(); //options: intStrategy redefine usage prompt
+attrib(I); //          no attributes
+
+(a)*x2+(2a)*xv+(a)*v2;
+cleardenom(_); // x2+2*xv+v2
+
+ideal I = y2+(a)*x+v3, (-a)*y4-2*y2v+(-a)*y2v3-xv3+(a)*v2-2*v4;
+
+"GB: "; groebner(I); // _[1]=x2+2*xv+v2 _[2]=y2+(a)*x+v3
+"SB: "; std(I);      // _[1]=x2+2*xv+v2 _[2]=y2+(a)*x+v3
+
+
+poly(2);
+
+cleardenom(_); // 1??
+
+
 
 $$$
 

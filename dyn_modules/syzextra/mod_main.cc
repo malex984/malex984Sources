@@ -1645,17 +1645,22 @@ static BOOLEAN _ClearContent(leftv res, leftv h)
 
   assume (h->Next() == NULL);
   
-  poly p = reinterpret_cast<poly>(h->Data());
+  poly ph = reinterpret_cast<poly>(h->Data());
   
-  if( p == NULL )
+  if( ph == NULL )
   {
     WarnS(usage);
     return TRUE;
   }
   
   const ring r =  currRing;
-  
-  number n; CPolyCoeffsEnumerator itr(p); n_ClearContent(itr, n, r->cf);
+  assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;
+
+  number n;
+
+  // experimentall (recursive enumerator treatment) of alg. ext
+  CPolyCoeffsEnumerator itr(ph);
+  n_ClearContent(itr, n, C);
 
   res->data = n;
   res->rtyp = NUMBER_CMD;
@@ -1687,17 +1692,22 @@ static BOOLEAN _ClearDenominators(leftv res, leftv h)
 
   assume (h->Next() == NULL);
 
-  poly p = reinterpret_cast<poly>(h->Data());
+  poly ph = reinterpret_cast<poly>(h->Data());
 
-  if( p == NULL )
+  if( ph == NULL )
   {
     WarnS(usage);
     return TRUE;
   }
 
   const ring r =  currRing;
+  assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;
 
-  number n; CPolyCoeffsEnumerator itr(p); n_ClearDenominators(itr, n, r->cf);
+  number n;
+
+  // experimentall (recursive enumerator treatment) of alg. ext.
+  CPolyCoeffsEnumerator itr(ph);
+  n_ClearDenominators(itr, n, C);
 
   res->data = n;
   res->rtyp = NUMBER_CMD;

@@ -1509,7 +1509,7 @@ void p_Lcm(poly a, poly b, poly m, const ring r)
        one is only interested in the remainder of the division. In this
        case, the method will be slightly faster.)
    leaves divisor unmodified */
-poly p_PolyDiv(poly &p, poly divisor, BOOLEAN needResult, ring r)
+poly      p_PolyDiv(poly &p, const poly divisor, const BOOLEAN needResult, const ring r)
 {
   assume(divisor != NULL);
   if (p == NULL) return NULL;
@@ -1530,117 +1530,6 @@ poly p_PolyDiv(poly &p, poly divisor, BOOLEAN needResult, ring r)
     p = p_Add_q(p, p_Neg(p_Mult_q(t, p_Copy(divisor, r), r), r), r);
   }
   return result;
-}
-
-/* returns NULL if p == NULL, otherwise makes p monic by dividing
-   by its leading coefficient (only done if this is not already 1);
-   this assumes that we are over a ground field so that division
-   is well-defined;
-   modifies p */
-void p_Monic(poly p, const ring r)
-{
-  if (p == NULL) return;
-  number n = n_Init(1, r->cf);
-  if (p->next==NULL) { p_SetCoeff(p,n,r); return; }
-  poly pp = p;
-  number lc = p_GetCoeff(p, r);
-  if (n_IsOne(lc, r->cf)) return;
-  number lcInverse = n_Invers(lc, r->cf);
-  p_SetCoeff(p, n, r);   // destroys old leading coefficient!
-  pIter(p);
-  while (p != NULL)
-  {
-    number n = n_Mult(p_GetCoeff(p, r), lcInverse, r->cf);
-    n_Normalize(n,r->cf);
-    p_SetCoeff(p, n, r);   // destroys old leading coefficient!
-    pIter(p);
-  }
-  n_Delete(&lcInverse, r->cf);
-  p = pp;
-}
-
-/* see p_Gcd;
-   additional assumption: deg(p) >= deg(q);
-   must destroy p and q (unless one of them is returned) */
-poly p_GcdHelper(poly &p, poly &q, ring r)
-{
-  if (q == NULL)
-  {
-    /* We have to make p monic before we return it, so that if the
-       gcd is a unit in the ground field, we will actually return 1. */
-    p_Monic(p, r);
-    return p;
-  }
-  else
-  {
-    p_PolyDiv(p, q, FALSE, r);
-    return p_GcdHelper(q, p, r);
-  }
-}
-
-/* assumes that p and q are univariate polynomials in r,
-   mentioning the same variable;
-   assumes a global monomial ordering in r;
-   assumes that not both p and q are NULL;
-   returns the gcd of p and q;
-   leaves p and q unmodified */
-poly p_Gcd(poly p, poly q, ring r)
-{
-  assume((p != NULL) || (q != NULL));
-
-  poly a = p; poly b = q;
-  if (p_Deg(a, r) < p_Deg(b, r)) { a = q; b = p; }
-  a = p_Copy(a, r); b = p_Copy(b, r);
-  return p_GcdHelper(a, b, r);
-}
-
-/* see p_ExtGcd;
-   additional assumption: deg(p) >= deg(q);
-   must destroy p and q (unless one of them is returned) */
-poly p_ExtGcdHelper(poly &p, poly &pFactor, poly &q, poly &qFactor,
-                    ring r)
-{
-  if (q == NULL)
-  {
-    qFactor = NULL;
-    pFactor = p_ISet(1, r);
-    p_SetCoeff(pFactor, n_Invers(p_GetCoeff(p, r), r->cf), r);
-    p_Monic(p, r);
-    return p;
-  }
-  else
-  {
-    poly pDivQ = p_PolyDiv(p, q, TRUE, r);
-    poly ppFactor = NULL; poly qqFactor = NULL;
-    poly theGcd = p_ExtGcdHelper(q, qqFactor, p, ppFactor, r);
-    pFactor = ppFactor;
-    qFactor = p_Add_q(qqFactor,
-                      p_Neg(p_Mult_q(pDivQ, p_Copy(ppFactor, r), r), r),
-                      r);
-    return theGcd;
-  }
-}
-
-/* assumes that p and q are univariate polynomials in r,
-   mentioning the same variable;
-   assumes a global monomial ordering in r;
-   assumes that not both p and q are NULL;
-   returns the gcd of p and q;
-   moreover, afterwards pFactor and qFactor contain appropriate
-   factors such that gcd(p, q) = p * pFactor + q * qFactor;
-   leaves p and q unmodified */
-poly p_ExtGcd(poly p, poly &pFactor, poly q, poly &qFactor, ring r)
-{
-  assume((p != NULL) || (q != NULL));
-  poly a = p; poly b = q; BOOLEAN aCorrespondsToP = TRUE;
-  if (p_Deg(a, r) < p_Deg(b, r))
-  { a = q; b = p; aCorrespondsToP = FALSE; }
-  a = p_Copy(a, r); b = p_Copy(b, r);
-  poly aFactor = NULL; poly bFactor = NULL;
-  poly theGcd = p_ExtGcdHelper(a, aFactor, b, bFactor, r);
-  if (aCorrespondsToP) { pFactor = aFactor; qFactor = bFactor; }
-  else                 { pFactor = bFactor; qFactor = aFactor; }
-  return theGcd;
 }
 
 /*2
@@ -2048,8 +1937,8 @@ void p_Content(poly ph, const ring r)
           p_SetCoeff(h, n_Mult(pGetCoeff(h), k,r->cf),r);
           pIter(h);
         }
-        assume( n_GreaterZero(pGetCoeff(ph),r->cf) );
-        if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
+//        assume( n_GreaterZero(pGetCoeff(ph),r->cf) );
+//        if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
       }
       n_Delete(&k,r->cf);
     }
@@ -2073,7 +1962,10 @@ void p_Content(poly ph, const ring r)
       // experimentall (recursive enumerator treatment) of alg. Ext!
       CPolyCoeffsEnumerator itr(ph);
       n_ClearContent(itr, r->cf);
-      assume( n_GreaterZero(pGetCoeff(ph),r->cf) );
+
+      p_Test(ph, r); n_Test(pGetCoeff(ph), C);
+      assume(n_GreaterZero(pGetCoeff(ph), C)); // ??
+      
       // if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
       return;
     }
@@ -2509,10 +2401,13 @@ poly p_Cleardenom(poly ph, const ring r)
   if( nCoeff_is_Q(C) || nCoeff_is_Q_algext(C) )
   {
     CPolyCoeffsEnumerator itr(ph);
+
     n_ClearDenominators(itr, C);
+
     n_ClearContent(itr, C); // divide out the content
 
-    assume( n_GreaterZero(pGetCoeff(ph),C) );
+    p_Test(ph, r); n_Test(pGetCoeff(ph), C);
+    assume(n_GreaterZero(pGetCoeff(ph), C)); // ??
 //    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
     
     return start;
@@ -2657,7 +2552,10 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
     n_Delete(&d, C);
     n_Delete(&h, C);
 
-    assume( n_GreaterZero(pGetCoeff(ph),C) );
+    n_Test(c, C);
+
+    p_Test(ph, r); n_Test(pGetCoeff(ph), C);
+    assume(n_GreaterZero(pGetCoeff(ph), C)); // ??
 /*
     if(!n_GreaterZero(pGetCoeff(ph),C))
     {

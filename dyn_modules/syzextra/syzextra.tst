@@ -375,13 +375,36 @@ cleardenom(_); // x2+2*xv+v2
 
 ideal I = y2+(a)*x+v3, (-a)*y4-2*y2v+(-a)*y2v3-xv3+(a)*v2-2*v4;
 
-"GB: "; groebner(I); // _[1]=x2+2*xv+v2 _[2]=y2+(a)*x+v3
-"SB: "; std(I);      // _[1]=x2+2*xv+v2 _[2]=y2+(a)*x+v3
+poly(2a);
+cleardenom(_); // 1??
+
+poly(-2a);
+cleardenom(_); // 1??
 
 
-poly(2);
+(-2a)*x + (4a)*y;
 
 cleardenom(_); // 1??
+
+poly P = (2a)*x;
+poly Q = (4a)*y;
+         
+gcd(P, Q);
+gcd(-P, Q);
+gcd(P, -Q);
+gcd(-P, -Q);
+
+
+y2+(a)*x+v3;
+cleardenom(_);
+
+I[2] + a* y2 * I[1];
+cleardenom(_);
+
+
+
+"GB: "; groebner(I); // _[1]=x2+2*xv+v2 _[2]=y2+(a)*x+v3
+"SB: "; std(I);      // _[1]=x2+2*xv+v2 _[2]=y2+(a)*x+v3
 
 
 

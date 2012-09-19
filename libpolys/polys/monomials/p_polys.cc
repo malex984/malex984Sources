@@ -1915,7 +1915,7 @@ static number p_InitContent(poly ph, const ring r);
 
 void p_Content(poly ph, const ring r)
 {
-  assume( ph == NULL );
+  assume( ph != NULL );
 
   assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;  
   
@@ -3956,6 +3956,47 @@ BOOLEAN p_ComparePolys(poly p1,poly p2, const ring r)
   }
   n_Delete(&n, r);
   return TRUE;
+}
+
+
+
+/*2
+* returns the length of a (numbers of monomials)
+* respect syzComp
+*/
+int pp_Length(const poly p, const ring r)
+{
+  if (p == NULL)
+    return 0;
+  
+  int l = 1;
+  poly a = p;
+  assume( a != NULL );
+  if (! rIsSyzIndexRing(r))
+  {
+    poly next = pNext(a);
+    while (next!=NULL)
+    {
+      a = next;
+      next = pNext(a);      
+      ++l;
+    }
+  }
+  else
+  {
+    const int curr_limit = rGetCurrSyzLimit(r); // syzComp
+    assume( curr_limit > 0 );
+    
+    while ((pIter(a))!=NULL)
+    {
+      if (p_GetComp(a,r) > curr_limit)
+        break;
+      
+      ++l;
+    }
+  }
+  return l;
+
 }
 
 /*2

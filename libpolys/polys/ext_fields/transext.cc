@@ -241,62 +241,107 @@ number ntCopy(number a, const coeffs cf)
   return (number)result;
 }
 
+/// TODO: normalization of a!?
 number ntGetNumerator(number &a, const coeffs cf)
 {
   ntTest(a);
   definiteGcdCancellation(a, cf, FALSE);
+  
   if (IS0(a)) return NULL;
+
   fraction f = (fraction)a;
   fraction result = (fraction)omAlloc0Bin(fractionObjectBin);
-  BOOLEAN denis1= DENIS1 (f);
+
+  const BOOLEAN denis1= DENIS1 (f);
+
   if (getCoeffType (ntCoeffs) == n_Q && !denis1)
     handleNestedFractionsOverQ (f, cf);
-  NUM (result)= p_Copy (NUM (f), ntRing);
-  DEN (result) = NULL;
-  COM (result) = 0;
+
   if (getCoeffType (ntCoeffs) == n_Q && denis1)
   {
-    if (!p_IsConstant (NUM (result), ntRing) && pNext (NUM(result)) != NULL)
-      p_Cleardenom (NUM(result), ntRing);
-    else
+    assume( DEN (f) == NULL );
+    
+    number g;
+    p_Cleardenom_n (NUM(f), ntRing, g);
+
+    if( !n_IsOne(g, ntRing->cf) )
     {
-      number g= p_GetAllDenom (NUM (result), ntRing);
-      NUM (result)= p_Mult_nn (NUM (result), g, ntRing);
+      DEN (f) = p_NSet(g, ntRing); // update COM(f)???
+      COM (f) ++;
+      assume( DEN (f) != NULL );      
+      
     }
+    else
+      n_Delete(&g, ntRing->cf);
   }
+
+  // Call ntNormalize instead of above?!?
+  
+  NUM (result) = p_Copy (NUM (f), ntRing); // ???
+  DEN (result) = NULL;
+  COM (result) = 0;
+  
+
   return (number)result;
 }
 
+/// TODO: normalization of a!?
 number ntGetDenom(number &a, const coeffs cf)
 {
   ntTest(a);
   definiteGcdCancellation(a, cf, FALSE);
   fraction f = (fraction)a;
   fraction result = (fraction)omAlloc0Bin(fractionObjectBin);
-  number g;
-  if (IS0(f) || (DENIS1 (f) && getCoeffType (ntCoeffs) != n_Q))
+
+  const BOOLEAN denis1 = DENIS1 (f);
+  
+  if( IS0(f) || (denis1 && getCoeffType (ntCoeffs) != n_Q) ) // */1 or 0
   {
     NUM (result)= p_One(ntRing);
-    DEN (result)= NULL;
-    COM (result)= 0;
   }
-  else if (DENIS1 (f))
+  else if (denis1) // */1 / Q
   {
-    poly num= p_Copy (NUM (f), ntRing);
-    if (!p_IsConstant (num, ntRing) && pNext(num) != NULL)
-      p_Cleardenom_n (num, ntRing, g);
+    assume( getCoeffType (ntCoeffs) == n_Q );
+
+    assume( DEN (f) == NULL );      
+    
+    number g;    
+//    poly num= p_Copy (NUM (f), ntRing); // ???
+    p_Cleardenom_n (NUM (f), ntRing, g);    
+
+    if( !n_IsOne(g, ntRing->cf) )
+    {
+      DEN (f) = p_NSet(g, ntRing); // update COM(f)???
+      assume( DEN (f) != NULL );
+      COM (f) ++;
+      NUM (result)= p_Copy (DEN (f), ntRing);
+    }
     else
-      g= p_GetAllDenom (num, ntRing);
-    result= (fraction) ntSetMap (ntRing->cf, cf) (g, ntRing->cf, cf);
+    {
+      NUM (result)= p_NSet(g, ntRing); // p_Copy (DEN (f), ntRing);
+//      n_Delete(&g, ntRing->cf);
+    }      
+
+    
+//    if (!p_IsConstant (num, ntRing) && pNext(num) != NULL)
+//    else
+//      g= p_GetAllDenom (num, ntRing);
+//    result= (fraction) ntSetMap (ntRing->cf, cf) (g, ntRing->cf, cf);
+
   }
   else
   {
+    assume( DEN (f) != NULL );
+
     if (getCoeffType (ntCoeffs) == n_Q)
       handleNestedFractionsOverQ (f, cf);
+    
     NUM (result)= p_Copy (DEN (f), ntRing);
-    DEN (result) = NULL;
-    COM (result) = 0;
   }
+
+  DEN (result)= NULL;
+  COM (result)= 0;
+  
   return (number)result;
 }
 

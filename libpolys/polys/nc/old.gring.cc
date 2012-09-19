@@ -203,7 +203,7 @@ poly nc_p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &lp,
 
   p = p_Add_q(p, mmc, r);
 
-  lp = pLength(p); // ring independent!
+  lp = pp_Length(p, r); // ring independent!
 
   return(p);
 }
@@ -214,7 +214,7 @@ poly nc_p_Plus_mm_Mult_qq(poly p, const poly m, const poly q, int &lp,
 {
   p = p_Add_q(p, nc_mm_Mult_pp( m, q, r ), r);
 
-  lp = pLength(p);
+  lp = pp_Length(p, r);
 
   return(p);
 }

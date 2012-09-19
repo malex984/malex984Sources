@@ -188,9 +188,15 @@ static inline int pLength(poly a)
   return l;
 }
 
-// returns the length of a polynomial (numbers of monomials) and the last mon.
-// respect syzComp
+
+/// returns the length of a polynomial (numbers of monomials) and the last mon.
+/// respect syzComp
 poly p_Last(const poly a, int &l, const ring r);
+
+/// returns the length of a polynomial (numbers of monomials)
+/// but respect syzComp!!!
+/// Note: could not call this p_Length due to its abuse by our 'templates'
+int pp_Length(const poly a, const ring r);
 
 /*----------------------------------------------------*/
 
@@ -963,19 +969,30 @@ static inline poly p_Mult_mm(poly p, poly m, const ring r)
     return r->p_Procs->p_Mult_mm(p, m, r);
 }
 
-// like p_Minus_mm_Mult_qq, except that if lp == pLength(lp) lq == pLength(lq)
-// then result = p-m*q, lp == pLength(result), last == pLast(result)
+// Note that the following functions should respect the syz_comp: ????
+// i.e. use p_Last or pp_Length for checking
+
+// Note also that 'spNoether' indicates the upper bound (wrt the monomial
+// ordering) for valid monomials in non global case...
+
+/// like p_Minus_mm_Mult_qq, except that if lp == pLength(lp) lq == pLength(lq)
+/// then result = p-m*q, lp == pLength(result), last == pLast(result)
 static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &lp, int lq,
                                  const poly spNoether, poly& last, const ring r)
 {
+  if( spNoether != NULL )
+    assume( !rHasGlobalOrdering(r) && !rIsPluralRing(r) );
+
+  assume(pLength(p) == lp);
+  assume(pLength(q) == lq);
+
   int l; 
 #ifdef HAVE_PLURAL
   if (rIsPluralRing(r))
   {
     p = nc_p_Minus_mm_Mult_qq(p, m, q, lp, lq, spNoether, r);
-    last = p_Last(p, l, r);
-    assume( lp == l );
-    assume( lp == pLength(p) );
+//    last = p_Last(p, l, r);
+    assume( lp == pLength(p));
     return p;
   }
 #endif
@@ -983,17 +1000,22 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   int shorter;
   const poly res = r->p_Procs->p_Minus_mm_Mult_qq(p, m, q, shorter, spNoether, r, last);
   lp = (lp + lq) - shorter;
-  assume( last == p_Last(res, l, r) );
-  assume( lp == l );
-  assume( lp == pLength(res) );
+//  assume( last == p_Last(res, l, r) && lp == l );
+  assume( lp == pLength(res));
   return res;
 }
 
 
-// like p_Minus_mm_Mult_qq (above) but without last 
+/// like p_Minus_mm_Mult_qq (above) but without last 
 static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &lp, int lq,
                                       const poly spNoether, const ring r)
 {
+  if( spNoether != NULL )
+    assume( !rHasGlobalOrdering(r) && !rIsPluralRing(r) );
+  
+  assume(pLength(p) == lp);
+  assume(pLength(q) == lq);
+
 #ifdef HAVE_PLURAL
   if (rIsPluralRing(r))
   {
@@ -1010,7 +1032,7 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   return res;
 }
 
-// return p - m*Copy(q), destroys p; const: p,m
+/// return p - m*Copy(q), destroys p; const: p,m
 static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, const ring r)
 {
 #ifdef HAVE_PLURAL

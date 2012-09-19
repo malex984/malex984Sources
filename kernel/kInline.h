@@ -267,7 +267,7 @@ KINLINE BOOLEAN sTObject::IsNull() const
 
 KINLINE int sTObject::GetpLength()
 {
-  if (pLength <= 0) pLength = ::pLength(p != NULL ? p : t_p);
+  if (pLength <= 0 && p!=NULL) pLength = ::pLength(p != NULL ? p : t_p);
   return pLength;
 }
 
@@ -597,8 +597,12 @@ KINLINE void sLObject::Tail_Minus_mm_Mult_qq(poly m, poly q, int lq,
     poly _p = (t_p != NULL ? t_p : p);
     assume(_p != NULL);
 
-    pNext(_p) = p_Minus_mm_Mult_qq( pNext(_p), m, q, pLength, lq, 
+    int lp = pLength - 1;
+//    assume( pp_Length(pNext(_p), tailRing) == lp );    
+//    assume( pp_Length(q, tailRing) == lq );    
+    pNext(_p) = p_Minus_mm_Mult_qq( pNext(_p), m, q, lp, lq, 
                                     spNoether, last, tailRing );
+    pLength = lp + 1;
 //    tailRing->p_Procs->p_Minus_mm_Mult_qq(pNext(_p), m, q, shorter,spNoether, tailRing, last);
 //    pLength += lq - shorter;
   }

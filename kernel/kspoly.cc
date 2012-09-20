@@ -369,12 +369,13 @@ int ksReducePolySig(LObject* PR,
   return ret;
 }
 
-/***************************************************************
- *
- * Creates S-Poly of p1 and p2
- *
- *
- ***************************************************************/
+// Creates S-Poly of p1 and p2
+// Const:   Pair->p1, Pair->p2
+// Changes: Pair->p == S-Poly of p1, p2
+// Assume:  Pair->p1 != NULL && Pair->p2
+// void ksCreateSpoly(LObject* Pair, poly spNoether = NULL,
+//                   int use_buckets=0, ring tailRing=currRing,
+//                   poly m1 = NULL, poly m2 = NULL, TObject** R = NULL);
 void ksCreateSpoly(LObject* Pair,   poly spNoether,
                    int use_buckets, ring tailRing,
                    poly m1, poly m2, TObject** R)
@@ -456,7 +457,7 @@ void ksCreateSpoly(LObject* Pair,   poly spNoether,
   Pair->SetLmTail(m2, a2, l2, use_buckets, tailRing, last);
 
   // get m2*a2 - m1*a1
-  Pair->Tail_Minus_mm_Mult_qq(m1, a1, l1, spNoether);
+  Pair->Tail_Minus_mm_Mult_qq(m1, a1, l1, spNoether); // !!!
 
   // Clean-up time
   Pair->LmDeleteAndIter();

@@ -1105,7 +1105,7 @@ KINLINE poly ksOldSpolyRed(poly p1, poly p2, poly spNoether)
   LObject L(p2);
   TObject T(p1);
 
-  ksReducePoly(&L, &T, spNoether);
+  ksReducePoly(&L, &T, spNoether); 
 
   return L.GetLmCurrRing();
 }
@@ -1126,7 +1126,7 @@ KINLINE poly ksOldCreateSpoly(poly p1, poly p2, poly spNoether, ring r)
   L.p1 = p1;
   L.p2 = p2;
 
-  ksCreateSpoly(&L, spNoether);
+  ksCreateSpoly(&L, spNoether); // !!!
   return L.GetLmCurrRing();
 }
 

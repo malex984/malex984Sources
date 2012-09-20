@@ -682,10 +682,10 @@ int ksReducePolyTail(LObject* PR,
 
 KINLINE int ksReducePolyTail(LObject* PR, TObject* PW, LObject* Red);
 
-// Creates S-Poly of Pair
-// Const:   Pair->p1, Pair->p2
-// Changes: Pair->p == S-Poly of p1, p2
-// Assume:  Pair->p1 != NULL && Pair->p2
+/// Creates S-Poly of Pair
+/// Const:   Pair->p1, Pair->p2
+/// Changes: Pair->p == S-Poly of p1, p2
+/// Assume:  Pair->p1 != NULL && Pair->p2
 void ksCreateSpoly(LObject* Pair, poly spNoether = NULL,
                    int use_buckets=0, ring tailRing=currRing,
                    poly m1 = NULL, poly m2 = NULL, TObject** R = NULL);

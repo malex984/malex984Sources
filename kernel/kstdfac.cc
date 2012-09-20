@@ -311,6 +311,7 @@ BOOLEAN k_factorize(poly p,ideal &rfac, ideal &fac_copy)
 
 static void completeReduceFac (kStrategy strat, ideal_list FL)
 {
+  kTest_TS(strat);
   int si;
 
   strat->noTailReduction = FALSE;
@@ -362,7 +363,7 @@ static void completeReduceFac (kStrategy strat, ideal_list FL)
       }
 
       n->P.p=fac->m[i];
-      n->P.pLength=0;
+      n->P.pLength=0; // ??
       n->initEcart(&n->P);
       /* enter P.p into s and L */
       int pos;
@@ -378,7 +379,7 @@ static void completeReduceFac (kStrategy strat, ideal_list FL)
         pNorm(n->P.p);
         n->P.p = redtailBba(n->P.p,pos-1,n);
       }
-      n->P.pLength=0;
+      n->P.pLength=0; // ??
       if (TEST_OPT_DEBUG)
       {
         PrintS("new s:");
@@ -542,6 +543,7 @@ static void completeReduceFac (kStrategy strat, ideal_list FL)
     if ((strat->Ll>=0) && (strat->sl>=0)) break;
     else si=strat->sl+1;
   }
+  kTest_TS(strat);
 }
 
 ideal bbafac (ideal F, ideal Q,intvec *w,kStrategy strat, ideal_list FL)
@@ -667,7 +669,7 @@ ideal bbafac (ideal F, ideal Q,intvec *w,kStrategy strat, ideal_list FL)
           if (n->redTailChange)
           {
             n->P.pCleardenom();
-            n->P.pLength=0;
+            n->P.pLength=0; // ??
           }
         }
         else
@@ -676,7 +678,7 @@ ideal bbafac (ideal F, ideal Q,intvec *w,kStrategy strat, ideal_list FL)
           n->P.p = redtailBba(n->P.p,pos-1,n);
           if (n->redTailChange)
           {
-            n->P.pLength=0;
+            n->P.pLength=0; // ??
           }
         }
         kTest_TS(n);
@@ -865,9 +867,12 @@ ideal bbafac (ideal F, ideal Q,intvec *w,kStrategy strat, ideal_list FL)
     kTest_TS(strat);
     if ((strat->Ll==-1) && (strat->sl>=0))
     {
-      if (TEST_OPT_REDSB) completeReduceFac(strat,FL);
+      if (TEST_OPT_REDSB)
+      {
+        completeReduceFac(strat,FL);
+        kTest_TS(strat);
+      }
     }
-    kTest_TS(strat);
   }
   if (TEST_OPT_DEBUG) messageSets(strat);
   /* complete reduction of the standard basis--------- */

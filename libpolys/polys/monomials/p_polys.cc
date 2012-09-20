@@ -1913,7 +1913,24 @@ void p_Content(poly ph, const ring r)
 {
   assume( ph != NULL );
 
-  assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;  
+  assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;
+
+
+#if CLEARENUMERATORS
+  if( CLEARENUMERATORS )
+  {
+      // experimentall (recursive enumerator treatment) of alg. Ext!
+    CPolyCoeffsEnumerator itr(ph);
+    n_ClearContent(itr, r->cf);
+
+    p_Test(ph, r); n_Test(pGetCoeff(ph), C);
+    assume(n_GreaterZero(pGetCoeff(ph), C)); // ??
+
+      // if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
+    return;
+  }
+#endif
+  
   
 #ifdef HAVE_RINGS
   if (rField_is_Ring(r))
@@ -2342,7 +2359,24 @@ poly p_Cleardenom(poly ph, const ring r)
   if( ph == NULL )
     return NULL;
 
-  assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;  
+  assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;
+  
+#if CLEARENUMERATORS
+  if( CLEARENUMERATORS )
+  {
+    CPolyCoeffsEnumerator itr(ph);
+
+    n_ClearDenominators(itr, C);
+
+    n_ClearContent(itr, C); // divide out the content
+
+    p_Test(ph, r); n_Test(pGetCoeff(ph), C);
+    assume(n_GreaterZero(pGetCoeff(ph), C)); // ??
+//    if(!n_GreaterZero(pGetCoeff(ph),C)) ph = p_Neg(ph,r);
+
+    return ph;
+  }
+#endif
 
   poly start=ph;
 
@@ -2516,6 +2550,35 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
   assume( ph != NULL );
 
   poly p = ph;
+
+#if CLEARENUMERATORS
+  if( CLEARENUMERATORS )
+  {
+    CPolyCoeffsEnumerator itr(ph);
+
+    n_ClearDenominators(itr, d, C); // multiply with common denom. d
+    n_ClearContent(itr, h, C); // divide by the content h 
+
+    c = n_Div(d, h, C); // d/h 
+
+    n_Delete(&d, C);
+    n_Delete(&h, C);
+
+    n_Test(c, C);
+
+    p_Test(ph, r); n_Test(pGetCoeff(ph), C);
+    assume(n_GreaterZero(pGetCoeff(ph), C)); // ??
+/*
+    if(!n_GreaterZero(pGetCoeff(ph),C))
+    {
+      ph = p_Neg(ph,r);
+      c = n_Neg(c, C);
+    }
+*/
+    return;
+  }
+#endif
+  
   
   if( pNext(p) == NULL )
   {

@@ -242,7 +242,11 @@ TestClearDenominators(poly(1/2x2 + 1/3y), number(6), poly(6*(1/2x2 + 1/3y)));
 
 
 kill R;
-ring R = (0,t), (x), dp; minpoly = t^2 + 1;
+ring R = (0,t), (x), dp;
+
+TestClearRingX(x);
+$
+minpoly = t^2 + 1;
 TestClearRingX(x);
 
 // the following tests are wrong: t never appears in denominators (due to minpoly)
@@ -352,6 +356,9 @@ gen(2)+(-1/6t)*gen(1)
 
 kill R;
 ring R = (0,a), (x, y, z, u, v), (a(1, 2, 0, 0, 0), ws(1, 2, 3, 4, 5), C);
+TestClearRingX(x);
+
+
 minpoly = a2 + 1;
 
 R;

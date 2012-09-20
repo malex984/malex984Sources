@@ -1123,13 +1123,18 @@ static void naClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
 
   // Quick and dirty fix for constant content clearing... !?
   CNAPolyCoeffsEnumerator itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
+
   number cc;
 
   extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
   nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!? 
 
-  c = (number) p_Mult_q(p_NSet(cc, R), (poly)c, R); // over alg. ext. of Q // takes over the input number
+  // over alg. ext. of Q // takes over the input number
+  c = (number) p_Mult_nn( (poly)c, cc, R); 
+//      p_Mult_q(p_NSet(cc, R), , R);
+
+  n_Delete(&cc, Q);
 
   // TODO: the above is not enough! need GCD's of polynomial coeffs...!
 /*

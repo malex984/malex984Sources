@@ -1570,47 +1570,172 @@ int ntIsParam(number m, const coeffs cf)
   return p_Var( NUM(f), R );
 }
 
-static void ntClearContent(ICoeffsEnumerator& /*numberCollectionEnumerator*/, number& c, const coeffs cf)
+static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
 {
   assume(cf != NULL);
   assume(getCoeffType(cf) == ID);
-  assume(nCoeff_is_Q_a(cf)); // only over Q(a), while the default impl. is used over Zp(a) !
-  // all coeffs are given by integers!!!
+  // all coeffs are given by fractions of polynomails over integers!!!
+  // without denominators!!!
 
-  c = n_Init(1, cf);
-  assume(FALSE); // TODO: NOT YET IMPLEMENTED!!!
+  const ring   R = cf->extRing;
+  assume(R != NULL);
+  const coeffs Q = R->cf; 
+  assume(Q != NULL); 
+  assume(nCoeff_is_Q(Q));  
 
-//   numberCollectionEnumerator.Reset();
-// 
-//   c = numberCollectionEnumerator.Current();
-// 
-//   n_Normalize(c, r);
-// 
-//   if (!n_IsOne(c, r))
-//   {    
-//     numberCollectionEnumerator.Current() = n_Init(1, r); // ???
-// 
-//     number inv = n_Invers(c, r);
-// 
-//     while( numberCollectionEnumerator.MoveNext() )
-//     {
-//       number &n = numberCollectionEnumerator.Current();
-//       n_Normalize(n, r); // ?
-//       n_InpMult(n, inv, r);
-//     }
-// 
-//     n_Delete(&inv, r);
-//   }
+  
+  numberCollectionEnumerator.Reset();
+
+  if( !numberCollectionEnumerator.MoveNext() ) // empty zero polynomial?
+  {
+    c = n_Init(1, cf);
+    return;
+  }
+
+  // all coeffs are given by integers after returning from this routine
+
+  // part 1, collect product of all denominators /gcds
+  poly cand = NULL;
+
+  // part2: all coeffs = all coeffs * cand
+  fraction result = (fraction)omAlloc0Bin(fractionObjectBin); 
+  DEN (result)= NULL;
+  COM (result)= 0;
+
+  c = (number) result;
+  
+  while( numberCollectionEnumerator.MoveNext() )  
+  {
+    number &n = numberCollectionEnumerator.Current();
+
+    ntNormalize(n, cf);
+
+    fraction f = (fraction)n;
+
+    assume( f != NULL );
+
+    const poly den = DEN(f);
+
+    assume( den == NULL ); // ?? / 1 ?
+
+    const poly num = NUM(f);
+
+    if( cand == NULL )
+      cand = p_Copy(num, R);
+    else
+      cand = singclap_gcd(cand, p_Copy(num, R), R); // gcd(cand, num)
+
+    if( p_IsOne(cand, R) )
+    {
+      NUM (result) = cand;
+      return;
+    }
+  }
+
+  if( cand == NULL )
+  {
+    NUM (result) = p_One(R);
+    return;
+  }  
+
+  NUM (result) = cand;
+  
+  numberCollectionEnumerator.Reset();
+
+  while (numberCollectionEnumerator.MoveNext() )
+  {
+    number &n = numberCollectionEnumerator.Current();
+    ntDiv(n, c, cf); // TODO: rewrite!?
+  }
+
+  // Quick and dirty fix for constant content clearing... !?
+  CNAPolyCoeffsEnumerator itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
+  number cc;
+
+  extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+
+  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
+
+  NUM (result) = p_Mult_nn(NUM(result), cc, R); // over alg. ext. of Q // takes over the input number
+  n_Delete(&cc, Q);
+  
 }
 
-static void ntClearDenominators(ICoeffsEnumerator& /*numberCollectionEnumerator*/, number& c, const coeffs cf)
+static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
 {
   assume(cf != NULL);
   assume(getCoeffType(cf) == ID); // both over Q(a) and Zp(a)!
-  // all coeffs are given by integers!!!
+  // all coeffs are given by fractions of polynomails over integers!!!
 
-  c = n_Init(1, cf);
-  assume(FALSE); // TODO: NOT YET IMPLEMENTED!!!
+  numberCollectionEnumerator.Reset();
+
+  if( !numberCollectionEnumerator.MoveNext() ) // empty zero polynomial?
+  {
+    c = n_Init(1, cf);
+    return;
+  }
+
+  // all coeffs are given by integers after returning from this routine
+
+  // part 1, collect product of all denominators /gcds
+  poly cand = NULL;
+
+  const ring R = cf->extRing;
+  
+  while( numberCollectionEnumerator.MoveNext() )  
+  {
+    number &n = numberCollectionEnumerator.Current();
+    
+    ntNormalize(n, cf);
+
+    fraction f = (fraction)n;
+
+    assume( f != NULL );
+
+    const poly den = DEN(f);
+
+    if( den == NULL ) // ?? / 1 ?
+      continue;
+
+    if( cand == NULL )
+      cand = p_Copy(den, R);
+    else
+    {
+      // cand === LCM( cand, den )!!!!
+      // NOTE: maybe it's better to make the product and clearcontent afterwards!?
+      // TODO: move the following to factory?
+      poly gcd = singclap_gcd(p_Copy(cand, R), p_Copy(den, R), R); // gcd(cand, den)
+      cand = p_Mult_q(cand, p_Copy(den, R), R); // cand *= den
+      const poly t = singclap_pdivide( cand, gcd, R ); // cand' * den / gcd(cand', den)
+      p_Delete(&cand, R);
+      p_Delete(&gcd, R);
+      cand = t;
+    }
+  }
+
+  if( cand == NULL )
+  {
+    c = n_Init(1, cf);
+    return;
+  }  
+
+  // part2: all coeffs = all coeffs * cand
+  fraction result = (fraction)omAlloc0Bin(fractionObjectBin); 
+  NUM (result)= cand; 
+  DEN (result)= NULL;
+  COM (result)= 0;
+
+  c = (number)result; //  c = cand;
+
+  numberCollectionEnumerator.Reset();
+
+  while (numberCollectionEnumerator.MoveNext() )
+  {
+    number &n = numberCollectionEnumerator.Current();
+    const number t = ntDiv(n, c, cf); // TODO: rewrite!?
+    ntDelete(&n, cf);
+    n = t;
+  }
 }
 
 BOOLEAN ntInitChar(coeffs cf, void * infoStruct)

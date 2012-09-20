@@ -2516,12 +2516,11 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
 {
   const coeffs C = r->cf;
   number d, h;
-  poly p;
-
-  p = ph;
 
   assume( ph != NULL );
 
+  poly p = ph;
+  
   if( pNext(p) == NULL )
   {
     c=n_Invers(pGetCoeff(p), C);

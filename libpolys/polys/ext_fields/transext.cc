@@ -55,8 +55,11 @@
 #include <factory/factory.h>
 #endif
 
-#include "ext_fields/transext.h"
-#include "prCopy.h"
+#include <polys/ext_fields/transext.h>
+#include <polys/prCopy.h>
+
+#include <polys/PolyEnumerator.h>
+
 
 /* constants for controlling the complexity of numbers */
 #define ADD_COMPLEXITY 1   /**< complexity increase due to + and - */
@@ -287,13 +290,15 @@ number ntGetNumerator(number &a, const coeffs cf)
     number g;
     // TODO/NOTE: the following should not be necessary (due to
     // Hannes!) as NUM (f) should be over Z!!!    
-    p_Cleardenom_n (NUM(f), ntRing, g);
+    CPolyCoeffsEnumerator itr(NUM(f));
 
-    if( !n_GreaterZero(g, ntRing->cf) )
-    {
-      NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
-      g = n_Neg(g, ntRing->cf);
-    }
+    extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+
+    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
+
+    assume( n_GreaterZero(g, ntRing->cf) );
+//       NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
+//       g = n_Neg(g, ntRing->cf);
     
     if( !n_IsOne(g, ntRing->cf) )
     {
@@ -323,78 +328,84 @@ number ntGetDenom(number &a, const coeffs cf)
   ntTest(a);
   definiteGcdCancellation(a, cf, FALSE);
   fraction f = (fraction)a;
+
   fraction result = (fraction)omAlloc0Bin(fractionObjectBin);
+  DEN (result)= NULL;
+  COM (result)= 0;
+
 
   const BOOLEAN denis1 = DENIS1 (f);
   
   if( IS0(f) || (denis1 && getCoeffType (ntCoeffs) != n_Q) ) // */1 or 0
   {
     NUM (result)= p_One(ntRing);
+    return (number)result;
   }
-  else if (denis1) // */1 / Q
-  {
-    assume( getCoeffType (ntCoeffs) == n_Q );
 
-    assume( DEN (f) == NULL );      
-    
-    number g;    
-//    poly num= p_Copy (NUM (f), ntRing); // ???
-
-
-    // TODO/NOTE: the following should not be necessary (due to
-    // Hannes!) as NUM (f) should be over Z!!!    
-    p_Cleardenom_n (NUM (f), ntRing, g); // may return -1 :((( 
-
-    if( !n_GreaterZero(g, ntRing->cf) )
-    {
-      NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
-      g = n_Neg(g, ntRing->cf);
-    }
-
-    // g should be a positive integer now!
-
-    if( !n_IsOne(g, ntRing->cf) )
-    {
-      assume( n_GreaterZero(g, ntRing->cf) );
-      assume( !n_IsOne(g, ntRing->cf) );
-      
-      DEN (f) = p_NSet(g, ntRing); // update COM(f)???
-      assume( DEN (f) != NULL );
-      COM (f) ++;
-      
-      NUM (result)= p_Copy (DEN (f), ntRing);
-    }
-    else
-    { // common denom == 1?
-      NUM (result)= p_NSet(g, ntRing); // p_Copy (DEN (f), ntRing);
-//      n_Delete(&g, ntRing->cf);
-    }      
-
-    ntTest(a);
-    
-//    if (!p_IsConstant (num, ntRing) && pNext(num) != NULL)
-//    else
-//      g= p_GetAllDenom (num, ntRing);
-//    result= (fraction) ntSetMap (ntRing->cf, cf) (g, ntRing->cf, cf);
-
-  }
-  else
+  if (!denis1) // */* / Q
   {
     assume( DEN (f) != NULL );
 
     if (getCoeffType (ntCoeffs) == n_Q)
       handleNestedFractionsOverQ (f, cf);
 
-    assume( !p_IsOne(DEN (f), ntRing) );
-
     ntTest(a);
+
+    if( DEN (f) != NULL ) // is it ?? // 1 now???
+    {
+      assume( !p_IsOne(DEN (f), ntRing) );
+
+      NUM (result) = p_Copy (DEN (f), ntRing);
+      return (number)result;
+    }
+//    NUM (result) = p_One(ntRing); // NOTE: just in order to be sure...
+  }
+  
+  // */1 / Q
+  assume( getCoeffType (ntCoeffs) == n_Q );
+  assume( DEN (f) == NULL );      
     
+  number g;    
+//    poly num= p_Copy (NUM (f), ntRing); // ???
+
+
+  // TODO/NOTE: the following should not be necessary (due to
+  // Hannes!) as NUM (f) should be over Z!!!
+  CPolyCoeffsEnumerator itr(NUM(f));
+  extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+
+  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
+
+  assume( n_GreaterZero(g, ntRing->cf) );
+//     NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
+//     g = n_Neg(g, ntRing->cf);
+
+  // g should be a positive integer now!
+
+  if( !n_IsOne(g, ntRing->cf) )
+  {
+    assume( n_GreaterZero(g, ntRing->cf) );
+    assume( !n_IsOne(g, ntRing->cf) );
+    
+    DEN (f) = p_NSet(g, ntRing); // update COM(f)???
+    assume( DEN (f) != NULL );
+    COM (f) ++;
+      
     NUM (result)= p_Copy (DEN (f), ntRing);
   }
+  else
+  { // common denom == 1?
+    NUM (result)= p_NSet(g, ntRing); // p_Copy (DEN (f), ntRing);
+//  n_Delete(&g, ntRing->cf);
+  }      
 
-  DEN (result)= NULL;
-  COM (result)= 0;
-  
+  ntTest(a);
+    
+//    if (!p_IsConstant (num, ntRing) && pNext(num) != NULL)
+//    else
+//      g= p_GetAllDenom (num, ntRing);
+//    result= (fraction) ntSetMap (ntRing->cf, cf) (g, ntRing->cf, cf);
+
   return (number)result;
 }
 

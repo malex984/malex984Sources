@@ -2640,7 +2640,7 @@ number   nlChineseRemainder(number *x, number *q,int rl, const coeffs C)
 #endif
 }
 
-static void nlClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
+void nlClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
 {
   assume(cf != NULL);
   assume(getCoeffType(cf) == ID);
@@ -2826,7 +2826,7 @@ void nlClearContentNoPositiveLead(ICoeffsEnumerator& numberCollectionEnumerator,
   }
 }
 
-static void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
+void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
 {
   assume(cf != NULL);
   assume(getCoeffType(cf) == ID);

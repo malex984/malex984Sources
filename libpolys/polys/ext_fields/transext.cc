@@ -292,9 +292,11 @@ number ntGetNumerator(number &a, const coeffs cf)
     // Hannes!) as NUM (f) should be over Z!!!    
     CPolyCoeffsEnumerator itr(NUM(f));
 
+    extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
     extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
     nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
+//    nlClearDenominators(itr, g, ntRing->cf);
 
     assume( n_GreaterZero(g, ntRing->cf) );
 //       NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
@@ -372,9 +374,12 @@ number ntGetDenom(number &a, const coeffs cf)
   // TODO/NOTE: the following should not be necessary (due to
   // Hannes!) as NUM (f) should be over Z!!!
   CPolyCoeffsEnumerator itr(NUM(f));
+   
+  extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
   extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
   nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
+//    nlClearDenominators(itr, g, ntRing->cf);
 
   assume( n_GreaterZero(g, ntRing->cf) );
 //     NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
@@ -1653,8 +1658,10 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   number cc;
 
   extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+  extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
 
-  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
+//  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
+  nlClearContent(itr, cc, Q);
 
   NUM (result) = p_Mult_nn(NUM(result), cc, R); // over alg. ext. of Q // takes over the input number
   n_Delete(&cc, Q);

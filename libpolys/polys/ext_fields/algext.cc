@@ -1122,7 +1122,7 @@ static void naClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   assume(cInverse == NULL); //   p_Delete(&cInverse, R);
 
   // Quick and dirty fix for constant content clearing... !?
-  CNAPolyCoeffsEnumerator itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
+  CRecursivePolyCoeffsEnumerator<NAConverter> itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
 
   number cc;
 
@@ -1201,7 +1201,7 @@ static void naClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
   assume(Q != NULL); 
   assume(nCoeff_is_Q(Q));  
   number n;
-  CNAPolyCoeffsEnumerator itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
+  CRecursivePolyCoeffsEnumerator<NAConverter> itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
 
   extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 

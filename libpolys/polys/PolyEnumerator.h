@@ -32,7 +32,8 @@
  */
 class CBasePolyEnumerator: public virtual IBaseEnumerator
 {
-  friend class CNAPolyCoeffsEnumerator;
+  template <class T>
+  friend class CRecursivePolyCoeffsEnumerator;
   private:
     poly m_poly; ///< essentially immutable original iterable object
     
@@ -146,8 +147,18 @@ class CPolyCoeffsEnumerator: public CBasePolyEnumerator, public virtual IPolyCoe
 };
 
 
-/// go into polynomials over an alg. extension recursively 
-class CNAPolyCoeffsEnumerator: public IPolyCoeffsEnumerator
+struct NAConverter
+{
+  static inline poly convert(const number& n)
+  {
+    // suitable for alg. ext. numbers that are just polys actually
+    return (poly)n;
+  }
+};
+
+/// go into polynomials over an alg. extension recursively
+template <class ConverterPolicy>
+class CRecursivePolyCoeffsEnumerator: public IPolyCoeffsEnumerator
 {
   private:
     IPolyCoeffsEnumerator& m_global_enumerator; ///< iterates the input polynomial
@@ -160,8 +171,10 @@ class CNAPolyCoeffsEnumerator: public IPolyCoeffsEnumerator
     }    
     
   public:
-   // NOTE: carefull: don't destruct the input enumerator before doing it with this one...
-   CNAPolyCoeffsEnumerator(IPolyCoeffsEnumerator& itr): m_global_enumerator(itr), m_local_enumerator(NULL) {}
+   
+    /// NOTE: carefull: don't destruct the input enumerator before doing it with this one...
+    /// this also changes the original IPolyCoeffsEnumerator& itr!
+    CRecursivePolyCoeffsEnumerator(IPolyCoeffsEnumerator& itr): m_global_enumerator(itr), m_local_enumerator(NULL) {}
 
     virtual bool MoveNext()
     {
@@ -170,8 +183,10 @@ class CNAPolyCoeffsEnumerator: public IPolyCoeffsEnumerator
 
       if( !m_global_enumerator.MoveNext() ) // at the end of the main input polynomial?
         return false;
-      
-      poly p = (poly)(m_global_enumerator.Current()); // Assumes that these numbers are just polynomials!
+
+      // TODO: make the following changeable (metaprogramming: use policy?),
+      // leave the following as default option...
+      poly p = ConverterPolicy::convert(m_global_enumerator.Current()); // Assumes that these numbers are just polynomials!
       assume( p != NULL );
 
       // the followig actually needs CPolyCoeffsEnumerator

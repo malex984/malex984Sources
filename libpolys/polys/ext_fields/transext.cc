@@ -1575,6 +1575,16 @@ int ntIsParam(number m, const coeffs cf)
   return p_Var( NUM(f), R );
 }
 
+struct NTNumConverter
+{
+  static inline poly convert(const number& n)
+  {
+    // suitable for trans. ext. numbers that are fractions of polys
+    return NUM((fraction)n); // return the numerator
+  }
+};
+
+
 static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
 {
   assume(cf != NULL);
@@ -1654,14 +1664,14 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   }
 
   // Quick and dirty fix for constant content clearing... !?
-  CNAPolyCoeffsEnumerator itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
+  CRecursivePolyCoeffsEnumerator<NTNumConverter> itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
   number cc;
 
   extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
   extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
 
 //  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
-  nlClearContent(itr, cc, Q);
+  n_ClearContent(itr, cc, Q);
 
   NUM (result) = p_Mult_nn(NUM(result), cc, R); // over alg. ext. of Q // takes over the input number
   n_Delete(&cc, Q);

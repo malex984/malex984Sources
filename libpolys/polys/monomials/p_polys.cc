@@ -1917,7 +1917,7 @@ void p_Content(poly ph, const ring r)
 
 
 #if CLEARENUMERATORS
-  if( CLEARENUMERATORS )
+  if( 0 )
   {
       // experimentall (recursive enumerator treatment) of alg. Ext!
     CPolyCoeffsEnumerator itr(ph);
@@ -1970,7 +1970,7 @@ void p_Content(poly ph, const ring r)
   {
     assume( pNext(ph) != NULL );
 #if CLEARENUMERATORS
-    if( nCoeff_is_Q(r->cf) || nCoeff_is_Q_algext(r->cf) )
+    if( nCoeff_is_Q(r->cf) || nCoeff_is_Q_a(r->cf) )
     {
       // experimentall (recursive enumerator treatment) of alg. Ext!
       CPolyCoeffsEnumerator itr(ph);
@@ -1986,7 +1986,7 @@ void p_Content(poly ph, const ring r)
     
     n_Normalize(pGetCoeff(ph),r->cf);
     if(!n_GreaterZero(pGetCoeff(ph),r->cf)) ph = p_Neg(ph,r);
-    if (rField_is_Q(r) && !CLEARENUMERATORS) // should not be used anymore if CLEARENUMERATORS is 1
+    if (rField_is_Q(r)) // should not be used anymore if CLEARENUMERATORS is 1
     {
       h=p_InitContent(ph,r);
       p=ph;
@@ -2362,7 +2362,7 @@ poly p_Cleardenom(poly ph, const ring r)
   assume( r != NULL ); assume( r->cf != NULL ); const coeffs C = r->cf;
   
 #if CLEARENUMERATORS
-  if( CLEARENUMERATORS )
+  if( 0 )
   {
     CPolyCoeffsEnumerator itr(ph);
 
@@ -2428,7 +2428,7 @@ poly p_Cleardenom(poly ph, const ring r)
   assume(pNext(p)!=NULL);
 
 #if CLEARENUMERATORS
-  if( nCoeff_is_Q(C) || nCoeff_is_Q_algext(C) )
+  if( nCoeff_is_Q(C) || nCoeff_is_Q_a(C) )
   {
     CPolyCoeffsEnumerator itr(ph);
 
@@ -2552,7 +2552,7 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
   poly p = ph;
 
 #if CLEARENUMERATORS
-  if( CLEARENUMERATORS )
+  if( 0 )
   {
     CPolyCoeffsEnumerator itr(ph);
 
@@ -2598,7 +2598,7 @@ void p_Cleardenom_n(poly ph,const ring r,number &c)
   assume( pNext(p) != NULL );
   
 #if CLEARENUMERATORS
-  if( nCoeff_is_Q(C) || nCoeff_is_Q_algext(C) )
+  if( nCoeff_is_Q(C) || nCoeff_is_Q_a(C) )
   {
     CPolyCoeffsEnumerator itr(ph);
     

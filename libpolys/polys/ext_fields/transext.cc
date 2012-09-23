@@ -295,8 +295,8 @@ number ntGetNumerator(number &a, const coeffs cf)
     extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
     extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
-    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
-//    nlClearDenominators(itr, g, ntRing->cf);
+//    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
+    nlClearDenominators(itr, g, ntRing->cf);
 
     assume( n_GreaterZero(g, ntRing->cf) );
 //       NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
@@ -378,8 +378,8 @@ number ntGetDenom(number &a, const coeffs cf)
   extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
   extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
-  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
-//    nlClearDenominators(itr, g, ntRing->cf);
+//  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
+    nlClearDenominators(itr, g, ntRing->cf);
 
   assume( n_GreaterZero(g, ntRing->cf) );
 //     NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((

@@ -983,8 +983,7 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   if( spNoether != NULL )
     assume( !rHasGlobalOrdering(r) && !rIsPluralRing(r) );
 
-  assume(pLength(p) == lp);
-  assume(pLength(q) == lq);
+//  assume(pLength(p) == lp && assume(pLength(q) == lq);
 
   int l; 
 #ifdef HAVE_PLURAL
@@ -992,7 +991,7 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   {
     p = nc_p_Minus_mm_Mult_qq(p, m, q, lp, lq, spNoether, r);
 //    last = p_Last(p, l, r);
-    assume( lp == pLength(p));
+//    assume( lp == pLength(p));
     return p;
   }
 #endif
@@ -1001,7 +1000,7 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   const poly res = r->p_Procs->p_Minus_mm_Mult_qq(p, m, q, shorter, spNoether, r, last);
   lp = (lp + lq) - shorter;
 //  assume( last == p_Last(res, l, r) && lp == l );
-  assume( lp == pLength(res));
+//  assume( lp == pLength(res));
   return res;
 }
 
@@ -1012,15 +1011,14 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
 {
   if( spNoether != NULL )
     assume( !rHasGlobalOrdering(r) && !rIsPluralRing(r) );
-  
-  assume(pLength(p) == lp);
-  assume(pLength(q) == lq);
+
+//  assume(pLength(p) == lp && pLength(q) == lq);
 
 #ifdef HAVE_PLURAL
   if (rIsPluralRing(r))
   {
     p = nc_p_Minus_mm_Mult_qq(p, m, q, lp, lq, spNoether, r);
-    assume( lp == pLength(p) );
+//    assume( lp == pLength(p) );
     return p;
   }
 #endif
@@ -1028,7 +1026,7 @@ static inline poly p_Minus_mm_Mult_qq(poly p, const poly m, const poly q, int &l
   int shorter; poly last;
   const poly res = r->p_Procs->p_Minus_mm_Mult_qq(p, m, q, shorter, spNoether, r, last);
   lp += lq - shorter;
-  assume( lp == pLength(res) );
+//  assume( lp == pLength(res) );
   return res;
 }
 

@@ -1618,8 +1618,8 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   COM (result)= 0;
 
   c = (number) result;
-  
-  while( numberCollectionEnumerator.MoveNext() )  
+
+  do
   {
     number &n = numberCollectionEnumerator.Current();
 
@@ -1640,42 +1640,42 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
     else
       cand = singclap_gcd(cand, p_Copy(num, R), R); // gcd(cand, num)
 
-    if( p_IsOne(cand, R) )
+    if( p_IsConstant(cand, R) )
+      break;
+  }
+  while( numberCollectionEnumerator.MoveNext() ) ;
+
+  if( cand != NULL /*&& !p_IsConstant(cand, R)*/ )
+  {
+    NUM (result) = cand;
+     
+    numberCollectionEnumerator.Reset();
+    while (numberCollectionEnumerator.MoveNext() )
     {
-      NUM (result) = cand;
-      return;
+      number &n = numberCollectionEnumerator.Current();
+      ntDiv(n, c, cf); // TODO: rewrite!?
     }
-  }
+  } // else NUM (result) = p_One(R);
 
-  if( cand == NULL )
-  {
-    NUM (result) = p_One(R);
-    return;
-  }  
 
-  NUM (result) = cand;
-  
-  numberCollectionEnumerator.Reset();
-
-  while (numberCollectionEnumerator.MoveNext() )
-  {
-    number &n = numberCollectionEnumerator.Current();
-    ntDiv(n, c, cf); // TODO: rewrite!?
-  }
-
-  // Quick and dirty fix for constant content clearing... !?
-  CRecursivePolyCoeffsEnumerator<NTNumConverter> itr(numberCollectionEnumerator); // recursively treat the numbers as polys!
+  // Quick and dirty fix for constant content clearing: consider numerators???
+  CRecursivePolyCoeffsEnumerator<NTNumConverter> itr(numberCollectionEnumerator); // recursively treat the NUM(numbers) as polys!
   number cc;
 
-  extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
-  extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
-
+//  extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+//  extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
+   
+   
 //  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
   n_ClearContent(itr, cc, Q);
 
-  NUM (result) = p_Mult_nn(NUM(result), cc, R); // over alg. ext. of Q // takes over the input number
-  n_Delete(&cc, Q);
-  
+  if( cand != NULL )
+  {
+    NUM (result) = p_Mult_nn(NUM(result), cc, R); // over alg. ext. of Q // takes over the input number
+    n_Delete(&cc, Q);
+  } else 
+    NUM (result) = p_NSet(cc, R);
+ 
 }
 
 static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
@@ -1698,8 +1698,8 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
   poly cand = NULL;
 
   const ring R = cf->extRing;
-  
-  while( numberCollectionEnumerator.MoveNext() )  
+
+  do
   {
     number &n = numberCollectionEnumerator.Current();
     
@@ -1729,6 +1729,7 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
       cand = t;
     }
   }
+  while( numberCollectionEnumerator.MoveNext() );
 
   if( cand == NULL )
   {

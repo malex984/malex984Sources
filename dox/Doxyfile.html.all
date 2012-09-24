@@ -40,7 +40,7 @@ PROJECT_NUMBER         = $VERSION$
 # If a relative path is entered, it will be relative to the location 
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = 
+OUTPUT_DIRECTORY       = /tmp/dox
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 
 # 4096 sub-directories (in 2 levels) under the output directory of each output 
@@ -568,9 +568,8 @@ WARN_LOGFILE           = dox.html.log
 # with spaces.
 
 INPUT                  =    \
-			 ../omalloc  ../svd  ../mpr  ../factory ../libfac  ../IntegerProgramming  ../ntl  ../MP \
-			../kernel \
- 			../Singular
+			../findexec ../omalloc  ../factory ../libpolys \
+			../kernel ../Singular
 
 
 # This tag can be used to specify the character encoding of the source files 
@@ -603,14 +602,14 @@ RECURSIVE              = YES
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
 
-EXCLUDE                = ../doc  ../Tst   ../emacs  ../singular_usr     ../Singular/LIB   ../Singular/Examples ../Singular++ \
-                         CVS
+EXCLUDE                = ../Singular/LIB ../libpolys/tests
+                         
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or 
 # directories that are symbolic links (a Unix filesystem feature) are excluded 
 # from the input.
 
-EXCLUDE_SYMLINKS       = NO
+EXCLUDE_SYMLINKS       = YES
 
 # If the value of the INPUT tag contains directories, you can use the 
 # EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude 

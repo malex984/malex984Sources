@@ -1613,10 +1613,13 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   poly cand = NULL;
 
   // part2: all coeffs = all coeffs * cand
-  fraction result = (fraction)omAlloc0Bin(fractionObjectBin); 
-  DEN (result)= NULL;
-  COM (result)= 0;
 
+  fraction result = (fraction)omAlloc0Bin(fractionObjectBin); 
+  
+  NUM (result) = NULL;
+  DEN (result) = NULL;
+  COM (result) = 0;
+   
   c = (number) result;
 
   do
@@ -1645,7 +1648,9 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   }
   while( numberCollectionEnumerator.MoveNext() ) ;
 
-  if( cand != NULL /*&& !p_IsConstant(cand, R)*/ )
+  if( cand != NULL )
+  {
+  if( !p_IsConstant(cand, R) )
   {
     NUM (result) = cand;
      
@@ -1653,29 +1658,53 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
     while (numberCollectionEnumerator.MoveNext() )
     {
       number &n = numberCollectionEnumerator.Current();
-      ntDiv(n, c, cf); // TODO: rewrite!?
+      const number t = ntDiv(n, c, cf); // TODO: rewrite!?
+      ntDelete(&n, cf);
+      n = t;
     }
   } // else NUM (result) = p_One(R);
-
+  else { p_Delete(&cand, R); cand = NULL; }
+  }
 
   // Quick and dirty fix for constant content clearing: consider numerators???
   CRecursivePolyCoeffsEnumerator<NTNumConverter> itr(numberCollectionEnumerator); // recursively treat the NUM(numbers) as polys!
   number cc;
 
 //  extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
-//  extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
+  extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
+  extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
    
    
 //  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
-  n_ClearContent(itr, cc, Q);
+  nlClearContent(itr, cc, Q);
 
   if( cand != NULL )
   {
     NUM (result) = p_Mult_nn(NUM(result), cc, R); // over alg. ext. of Q // takes over the input number
     n_Delete(&cc, Q);
   } else 
-    NUM (result) = p_NSet(cc, R);
- 
+    NUM (result) = p_NSet(cc, R); 
+
+  // process the resulting fraction: Z[] / N
+  CPolyCoeffsEnumerator itr2(NUM (result));
+  nlClearDenominators(itr2, cc, Q);
+   
+  if( !n_GreaterZero(cc, Q) )
+  {
+    cc = n_Neg(cc, Q);
+    NUM (result) = p_Neg(NUM (result), R);
+  }
+   
+  if( n_IsOne(cc, Q) )
+     n_Delete(&cc, Q);
+  else
+  {
+    DEN (result) = p_NSet(cc, R);
+    COM (result) = 1;
+  }
+   
+  
+
 }
 
 static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& c, const coeffs cf)
@@ -1698,6 +1727,11 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
   poly cand = NULL;
 
   const ring R = cf->extRing;
+  assume(R != NULL); 
+
+  const coeffs Q = R->cf; 
+  assume(Q != NULL); 
+  assume(nCoeff_is_Q(Q));  
 
   do
   {
@@ -1739,10 +1773,32 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
 
   // part2: all coeffs = all coeffs * cand
   fraction result = (fraction)omAlloc0Bin(fractionObjectBin); 
-  NUM (result)= cand; 
   DEN (result)= NULL;
   COM (result)= 0;
 
+   
+  // process the resulting fraction: Z[] / N
+  CPolyCoeffsEnumerator itr2(cand);
+  number cc; n_ClearDenominators(itr2, cc, Q);
+   
+  if( !n_GreaterZero(cc, Q) )
+  {
+    cc = n_Neg(cc, Q);
+    cand = p_Neg(cand, R);
+  }
+   
+  if( n_IsOne(cc, Q) )
+     n_Delete(&cc, Q);
+  else
+  {
+    DEN (result) = p_NSet(cc, R);
+    COM (result) = 1;
+  }
+   
+  NUM (result)= cand; 
+   
+   
+   
   c = (number)result; //  c = cand;
 
   numberCollectionEnumerator.Reset();

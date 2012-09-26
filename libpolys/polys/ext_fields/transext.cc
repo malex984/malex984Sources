@@ -298,9 +298,14 @@ number ntGetNumerator(number &a, const coeffs cf)
 //    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
     nlClearDenominators(itr, g, ntRing->cf);
 
-    assume( n_GreaterZero(g, ntRing->cf) );
-//       NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
-//       g = n_Neg(g, ntRing->cf);
+    if( !n_GreaterZero(g, ntRing->cf) )
+    {
+      NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
+      g = n_Neg(g, ntRing->cf);
+    }
+
+    // g should be a positive integer now!
+    assume( n_GreaterZero(g, ntRing->cf) );  
     
     if( !n_IsOne(g, ntRing->cf) )
     {
@@ -381,11 +386,17 @@ number ntGetDenom(number &a, const coeffs cf)
 //  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
     nlClearDenominators(itr, g, ntRing->cf);
 
-  assume( n_GreaterZero(g, ntRing->cf) );
+    
+  if( !n_GreaterZero(g, ntRing->cf) )
+  {
 //     NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
 //     g = n_Neg(g, ntRing->cf);
+    NUM (f) = p_Neg(NUM (f), ntRing); // Ugly :(((
+    g = n_Neg(g, ntRing->cf);
+  }
 
   // g should be a positive integer now!
+  assume( n_GreaterZero(g, ntRing->cf) );  
 
   if( !n_IsOne(g, ntRing->cf) )
   {

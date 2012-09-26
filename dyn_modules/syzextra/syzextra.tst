@@ -245,7 +245,7 @@ ring R = (0, m1, m2, M, g, L), (Dt), (dp(1), C);
 // Manual/canonize.tst
 (-g)/(m2)*gen(3)+(-m1*g)/(m2^2)*gen(2);
 
-TestClearDenominators((-g)/(m2)*gen(3)+(-m1*g)/(m2^2)*gen(2), number(g/(m2^2)), (-m2)*gen(3)+(-m1)*gen(2));
+TestClearDenominators((-g)/(m2)*gen(3)+(-m1*g)/(m2^2)*gen(2), number((m2^2)), (-g*m2)*gen(3)+(-g*m1)*gen(2));
 
 // cleardenom(_);
    

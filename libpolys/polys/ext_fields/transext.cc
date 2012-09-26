@@ -99,6 +99,12 @@ static const n_coeffType ID = n_transExt;
 #define ntCoeffs cf->extRing->cf
 
 
+extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
+extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+
+extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
+extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+
 
 omBin fractionObjectBin = omGetSpecBin(sizeof(fractionObject));
 
@@ -292,11 +298,9 @@ number ntGetNumerator(number &a, const coeffs cf)
     // Hannes!) as NUM (f) should be over Z!!!    
     CPolyCoeffsEnumerator itr(NUM(f));
 
-    extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
-    extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
-//    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
-    nlClearDenominators(itr, g, ntRing->cf);
+    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
+//    nlClearDenominators(itr, g, ntRing->cf);
 
     if( !n_GreaterZero(g, ntRing->cf) )
     {
@@ -380,11 +384,8 @@ number ntGetDenom(number &a, const coeffs cf)
   // Hannes!) as NUM (f) should be over Z!!!
   CPolyCoeffsEnumerator itr(NUM(f));
    
-  extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
-  extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
-
-//  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
-    nlClearDenominators(itr, g, ntRing->cf);
+  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
+//    nlClearDenominators(itr, g, ntRing->cf);
 
     
   if( !n_GreaterZero(g, ntRing->cf) )
@@ -1681,13 +1682,9 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   CRecursivePolyCoeffsEnumerator<NTNumConverter> itr(numberCollectionEnumerator); // recursively treat the NUM(numbers) as polys!
   number cc;
 
-//  extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
-  extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
-  extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
-   
-   
-//  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
-  nlClearContent(itr, cc, Q);
+ 
+  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
+//  nlClearContent(itr, cc, Q);
 
   if( cand != NULL )
   {
@@ -1790,7 +1787,8 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
    
   // process the resulting fraction: Z[] / N
   CPolyCoeffsEnumerator itr2(cand);
-  number cc; n_ClearDenominators(itr2, cc, Q);
+  number cc;
+  nlClearDenominatorsNoPositiveLead(itr2, cc, Q);
    
   if( !n_GreaterZero(cc, Q) )
   {

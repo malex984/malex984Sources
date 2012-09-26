@@ -239,6 +239,40 @@ TestClearDenominators(poly(1/2x2 + 1/3y), number(6), poly(6*(1/2x2 + 1/3y)));
 1/2x2 + 1/3y; cleardenom(_);
 
 
+kill R;
+ring R = (0, m1, m2, M, g, L), (Dt), (dp(1), C);
+
+// Manual/canonize.tst
+(-g)/(m2)*gen(3)+(-m1*g)/(m2^2)*gen(2);
+
+TestClearDenominators((-g)/(m2)*gen(3)+(-m1*g)/(m2^2)*gen(2), number(g/(m2^2)), (-m2)*gen(3)+(-m1)*gen(2));
+
+// cleardenom(_);
+   
+$
+
+
+kill R;
+ring R = (0, I, T, Px, Py, Cx, Cy, Sx, Sy, a, b, dt, dx, dy), (i, t, x, y, cx, cy, sx, sy), (c, lp(8));
+ideal q= cy^2+sy^2-1, cx^2+sx^2-1, i^2+1;
+q = std(q);
+q;
+
+qring Q = q;
+basering;
+
+number n = (Cy^2*dt^2);
+
+cleardenom(n);
+
+n;
+
+denominator(n);
+
+numerator(n);
+
+kill R;
+$
 
 
 kill R;

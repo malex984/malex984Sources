@@ -2836,6 +2836,7 @@ void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& 
   if( !numberCollectionEnumerator.MoveNext() ) // empty zero polynomial?
   {
     c = n_Init(1, cf);
+//    assume( n_GreaterZero(c, cf) );
     return;
   }
 
@@ -2897,6 +2898,7 @@ void nlClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, number& 
         n = nlNeg(n, cf);
       } 
     }
+//    assume( n_GreaterZero(c, cf) );
     return;
   }
 

@@ -103,8 +103,8 @@ static const n_coeffType ID = n_transExt;
 extern void nlClearContent(ICoeffsEnumerator&, number&, const coeffs);
 extern void nlClearContentNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
-extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
-extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
+//extern void nlClearDenominators(ICoeffsEnumerator&, number&, const coeffs);
+//extern void nlClearDenominatorsNoPositiveLead(ICoeffsEnumerator&, number&, const coeffs);
 
 
 omBin fractionObjectBin = omGetSpecBin(sizeof(fractionObject));
@@ -313,7 +313,7 @@ number ntGetNumerator(number &a, const coeffs cf)
     CPolyCoeffsEnumerator itr(NUM(f));
 
 
-    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
+    n_ClearDenominators(itr, g, ntRing->cf);
 //    nlClearDenominators(itr, g, ntRing->cf);
 
     if( !n_GreaterZero(g, ntRing->cf) )
@@ -400,7 +400,7 @@ number ntGetDenom(number &a, const coeffs cf)
   // Hannes!) as NUM (f) should be over Z!!!
   CPolyCoeffsEnumerator itr(NUM(f));
    
-  nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf); // may return -1 :((( 
+  n_ClearDenominators(itr, g, ntRing->cf); // may return -1 :((( 
 //    nlClearDenominators(itr, g, ntRing->cf);
 
     
@@ -550,7 +550,7 @@ number ntInit(poly p, const coeffs cf)
     // Hannes!) as NUM (f) should be over Z!!!    
     CPolyCoeffsEnumerator itr(p);
 
-    nlClearDenominatorsNoPositiveLead(itr, g, ntRing->cf);
+    n_ClearDenominators(itr, g, ntRing->cf);
 //    nlClearDenominators(itr, g, ntRing->cf);
 
     if( !n_GreaterZero(g, ntRing->cf) )

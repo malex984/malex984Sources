@@ -1761,8 +1761,8 @@ static void ntClearContent(ICoeffsEnumerator& numberCollectionEnumerator, number
   CRecursivePolyCoeffsEnumerator<NTNumConverter> itr(numberCollectionEnumerator); // recursively treat the NUM(numbers) as polys!
   number cc;
    
-  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
-//  nlClearContent(itr, cc, Q);
+//  nlClearContentNoPositiveLead(itr, cc, Q); // TODO: get rid of (-LC) normalization!?
+  nlClearContent(itr, cc, Q);
   number g = ntInit(p_NSet(cc, R), cf);
    
   if( cand != NULL )

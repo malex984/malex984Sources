@@ -87,6 +87,7 @@ proc TestClearContent(def i, number c, def o)
   {
     basering;
     ERROR("[TestClearContent -- FAILED]");
+    $
   }
   ""; 
 }
@@ -131,6 +132,7 @@ proc TestClearDenominators(def i, number c, def o)
   {
     basering;
     ERROR("[TestClearDenominators -- FAILED]");
+    $
   }
   ""; 
 }
@@ -183,7 +185,7 @@ TestClearDenominators(vector([1/2, 1]), number(2), vector([1, 2])); // {1/2, 1} 
 TestClearDenominators(vector([1/3,1/4,1/6,1]), number(12), vector([4,3,2,12])); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
 TestClearDenominators(vector([1/2,1/4,3/2,111111111111]), number(4), vector([2,1,6,444444444444])); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
 
-
+/*
 TestClearDenominators(-poly(1), -number(1), poly(1)); // {1} -> {1}, c=1
 TestClearDenominators(-poly(2), -number(1), poly(2)); // {2} -> {2}, c=1
 
@@ -198,6 +200,7 @@ TestClearDenominators(-vector([1, 1/2]), -number(2), vector([2, 1])); // {1, 1/2
 TestClearDenominators(-vector([1/2, 1]), -number(2), vector([1, 2])); // {1/2, 1} -> {1, 2}, c=2
 TestClearDenominators(-vector([1/3,1/4,1/6,1]), -number(12), vector([4,3,2,12])); // {1/3, 1/4, 1/6, 1 } -> {4, 3, 2, 12}, c=12
 TestClearDenominators(-vector([1/2,1/4,3/2,111111111111]), -number(4), vector([2,1,6,444444444444])); // {1/2, 1/4, 3/2, 111111111111 } -> {2, 1, 6, 444444444444} , c=4
+*/
 
 }
 
@@ -388,9 +391,12 @@ gen(2)+(-1/6t)*gen(1)
 
 kill R;
 ring R = (0,a), (x, y, z, u, v), (a(1, 2, 0, 0, 0), ws(1, 2, 3, 4, 5), C);
+
+// poly pp = 1/3*x3+1/4*x2+1/6*x+1 ; ClearDenominators(pp); pp;
+
 TestClearRingX(x);
 
-$
+// $
 
 minpoly = a2 + 1;
 
@@ -425,6 +431,8 @@ cleardenom(_); // 1??
 (-2a)*x + (4a)*y;
 
 cleardenom(_); // 1??
+
+kill Q;
 
 poly P = (2a)*x;
 poly Q = (4a)*y;

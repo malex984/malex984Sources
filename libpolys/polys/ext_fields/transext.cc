@@ -718,7 +718,7 @@ number ntAdd(number a, number b, const coeffs cf)
   COM(result) = COM(fa) + COM(fb) + ADD_COMPLEXITY;
   heuristicGcdCancellation((number)result, cf);
 
-  ntTest((number)result);
+//  ntTest((number)result);
    
   return (number)result;
 }
@@ -754,7 +754,7 @@ number ntSub(number a, number b, const coeffs cf)
   DEN(result) = f;
   COM(result) = COM(fa) + COM(fb) + ADD_COMPLEXITY;
   heuristicGcdCancellation((number)result, cf);
-  ntTest((number)result);
+//  ntTest((number)result);
   return (number)result;
 }
 
@@ -815,7 +815,7 @@ number ntMult(number a, number b, const coeffs cf)
     }
   }
 
-  ntTest((number)result);
+//  ntTest((number)result);
   
   return (number)result;
 }
@@ -844,7 +844,7 @@ number ntDiv(number a, number b, const coeffs cf)
     DEN(result) = f;
   COM(result) = COM(fa) + COM(fb) + MULT_COMPLEXITY;
   heuristicGcdCancellation((number)result, cf);
-  ntTest((number)result);
+//  ntTest((number)result);
   return (number)result;
 }
 
@@ -1054,7 +1054,6 @@ void handleNestedFractionsOverQ(fraction f, const coeffs cf)
 /* modifies a */
 void heuristicGcdCancellation(number a, const coeffs cf)
 {
-  ntTest(a);
 //  ntTest(a); // !!!!????
   if (IS0(a)) return;
 
@@ -1823,8 +1822,12 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
       // cand === LCM( cand, den )!!!!
       // NOTE: maybe it's better to make the product and clearcontent afterwards!?
       // TODO: move the following to factory?
-      poly gcd = singclap_gcd(p_Copy(cand, R), p_Copy(den, R), R); // gcd(cand, den)
-      cand = p_Mult_q(cand, p_Copy(den, R), R); // cand *= den
+      number ggg = n_Gcd( pGetCoeff(cand), pGetCoeff(den), Q);
+      poly gcd = singclap_gcd(p_Copy(cand, R), p_Copy(den, R), R); // gcd(cand, den) is monic no mater leading coeffs! :((((
+      assume( n_IsOne(pGetCoeff(gcd), Q) );
+      gcd = p_Mult_nn(gcd, ggg, R);
+      n_Delete(&ggg, Q);
+      cand = p_Mult_q(cand, p_Copy(den, R), R); // cand *= den      
       const poly t = singclap_pdivide( cand, gcd, R ); // cand' * den / gcd(cand', den)
       p_Delete(&cand, R);
       p_Delete(&gcd, R);

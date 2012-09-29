@@ -954,8 +954,6 @@ void ntPower(number a, int exp, number *b, const coeffs cf)
    modifies f */
 void handleNestedFractionsOverQ(fraction f, const coeffs cf)
 {
-  ntTest((number)f);
-
   assume(nCoeff_is_Q(ntCoeffs));
   assume(!IS0(f));
   assume(!DENIS1(f));
@@ -1048,6 +1046,13 @@ void handleNestedFractionsOverQ(fraction f, const coeffs cf)
     p_Delete(&DEN(f), ntRing); DEN(f) = NULL;
   }
    
+  if( DEN(f) != NULL )
+    if( !n_GreaterZero(pGetCoeff(DEN(f)), ntCoeffs) )
+    {
+      NUM(f) = p_Neg(NUM(f), ntRing);
+      DEN(f) = p_Neg(DEN(f), ntRing);
+    }  
+   
   ntTest((number)f); // TODO!
 }
 
@@ -1060,6 +1065,8 @@ void heuristicGcdCancellation(number a, const coeffs cf)
   fraction f = (fraction)a;
   if (DENIS1(f) || NUMIS1(f)) { COM(f) = 0; ntTest(a); return; }
 
+  assume( DEN(f) != NULL );
+
   /* check whether NUM(f) = DEN(f), and - if so - replace 'a' by 1 */
   if (p_EqualPolys(NUM(f), DEN(f), ntRing))
   { /* numerator and denominator are both != 1 */
@@ -1070,11 +1077,21 @@ void heuristicGcdCancellation(number a, const coeffs cf)
   {
     if (COM(f) > BOUND_COMPLEXITY) 
       definiteGcdCancellation(a, cf, TRUE);
+
+  // TODO: check if it is enough to put the following into definiteGcdCancellation?!
+  if( DEN(f) != NULL )
+    if( !n_GreaterZero(pGetCoeff(DEN(f)), ntCoeffs) )
+    {
+      NUM(f) = p_Neg(NUM(f), ntRing);
+      DEN(f) = p_Neg(DEN(f), ntRing);
+    }  
   }
+  
+  
   ntTest(a); // !!!!????
 }
 
-/* modifies a */
+/// modifies a
 void definiteGcdCancellation(number a, const coeffs cf,
                              BOOLEAN simpleTestsHaveAlreadyBeenPerformed)
 {
@@ -1099,15 +1116,12 @@ void definiteGcdCancellation(number a, const coeffs cf,
   }
 
 #ifdef HAVE_FACTORY
-  /* singclap_gcd destroys its arguments; we hence need copies: */
-  poly pNum = p_Copy(NUM(f), ntRing);
-  poly pDen = p_Copy(DEN(f), ntRing);
-
   /* Note that, over Q, singclap_gcd will remove the denominators in all
      rational coefficients of pNum and pDen, before starting to compute
      the gcd. Thus, we do not need to ensure that the coefficients of
      pNum and pDen live in Z; they may well be elements of Q\Z. */
-  poly pGcd = singclap_gcd(pNum, pDen, cf->extRing);
+  /* singclap_gcd destroys its arguments; we hence need copies: */
+  poly pGcd = singclap_gcd(p_Copy(NUM(f), ntRing), p_Copy(DEN(f), ntRing), cf->extRing);
   if (p_IsConstant(pGcd, ntRing) &&
       n_IsOne(p_GetCoeff(pGcd, ntRing), ntCoeffs))
   { /* gcd = 1; nothing to cancel;
@@ -1143,7 +1157,15 @@ void definiteGcdCancellation(number a, const coeffs cf,
   }
   COM(f) = 0;
   p_Delete(&pGcd, ntRing);
+
+  if( DEN(f) != NULL )
+    if( !n_GreaterZero(pGetCoeff(DEN(f)), ntCoeffs) )
+    {
+      NUM(f) = p_Neg(NUM(f), ntRing);
+      DEN(f) = p_Neg(DEN(f), ntRing);
+    }   
 #endif /* HAVE_FACTORY */
+   
   ntTest(a); // !!!!
 }
 
@@ -1798,7 +1820,7 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
 
   const coeffs Q = R->cf; 
   assume(Q != NULL); 
-  assume(nCoeff_is_Q(Q));  
+//  assume(nCoeff_is_Q(Q));  
 
   do
   {
@@ -1822,11 +1844,8 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
       // cand === LCM( cand, den )!!!!
       // NOTE: maybe it's better to make the product and clearcontent afterwards!?
       // TODO: move the following to factory?
-      number ggg = n_Gcd( pGetCoeff(cand), pGetCoeff(den), Q);
       poly gcd = singclap_gcd(p_Copy(cand, R), p_Copy(den, R), R); // gcd(cand, den) is monic no mater leading coeffs! :((((
-      assume( n_IsOne(pGetCoeff(gcd), Q) );
-      gcd = p_Mult_nn(gcd, ggg, R);
-      n_Delete(&ggg, Q);
+//      assume( n_IsOne(pGetCoeff(gcd), Q) ); // TODO: this may be wrong...
       cand = p_Mult_q(cand, p_Copy(den, R), R); // cand *= den      
       const poly t = singclap_pdivide( cand, gcd, R ); // cand' * den / gcd(cand', den)
       p_Delete(&cand, R);
@@ -1845,14 +1864,73 @@ static void ntClearDenominators(ICoeffsEnumerator& numberCollectionEnumerator, n
   c = ntInit(cand, cf); 
 
   numberCollectionEnumerator.Reset();
+   
+  number d = NULL;
 
   while (numberCollectionEnumerator.MoveNext() )
   {
     number &n = numberCollectionEnumerator.Current();
-    const number t = ntMult(n, c, cf); // TODO: rewrite!?
+    number t = ntMult(n, c, cf); // TODO: rewrite!?
     ntDelete(&n, cf);
+
+    ntNormalize(t, cf); // TODO: needed?
     n = t;
+    
+    fraction f = (fraction)t;
+    assume( f != NULL );
+
+    const poly den = DEN(f);
+
+    if( den != NULL ) // ?? / ?? ?
+    {
+      assume( p_IsConstant(den, R) );
+      assume( pNext(den) == NULL );
+	  
+      if( d == NULL )
+	d = n_Copy(pGetCoeff(den), Q);
+      else
+      {
+	number g = n_Lcm(d, pGetCoeff(den), Q);
+        n_Delete(&d, Q); d = g;
+      }
+    }
   }
+   
+  if( d != NULL )
+  {
+    numberCollectionEnumerator.Reset();
+    while (numberCollectionEnumerator.MoveNext() )
+    {
+      number &n = numberCollectionEnumerator.Current();
+      fraction f = (fraction)n;
+
+      assume( f != NULL );
+
+      const poly den = DEN(f);
+
+      if( den == NULL ) // ?? / 1 ?
+        NUM(f) = p_Mult_nn(NUM(f), d, R);
+      else
+      {
+        assume( p_IsConstant(den, R) );
+        assume( pNext(den) == NULL );
+	 
+	number ddd = n_Div(d, pGetCoeff(den), Q); // but be an integer now!!!
+        NUM(f) = p_Mult_nn(NUM(f), ddd, R);
+	n_Delete(&ddd, Q);
+	
+	p_Delete(&DEN(f), R); 
+	DEN(f) = NULL; // TODO: check if this is needed!?
+      }      
+       
+      assume( DEN(f) == NULL );
+    }
+     
+    NUM(c) = p_Mult_nn(NUM(c), d, R);
+    n_Delete(&d, Q);
+  }
+   
+   
   ntTest(c);
 }
 

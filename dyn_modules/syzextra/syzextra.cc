@@ -901,8 +901,7 @@ CLeadingTerm::CLeadingTerm(unsigned int _label,  const poly _lt, const ring R):
     m_sev( p_GetShortExpVector(_lt, R) ),  m_label( _label ),  m_lt( _lt )
 { }
 
-
-CReducerFinder::~CReducerFinder()
+ModulePolicy::~ModulePolicy()
 {
   for( CReducersHash::const_iterator it = m_hash.begin(); it != m_hash.end(); it++ )
   {
@@ -932,17 +931,15 @@ void CReducerFinder::Initialize(const ideal L)
 
       // NOTE: label is k \in 0 ... |L|-1!!!
       if( a != NULL )
-        m_hash[p_GetComp(a, R)].push_back( new CLeadingTerm(k, a, R) );
+        AddTerm(a, p_GetComp(a, R), new CLeadingTerm(k, a, R));
     }
   }
 }
 
 CReducerFinder::CReducerFinder(const ideal L, const SchreyerSyzygyComputationFlags& flags):
-    SchreyerSyzygyComputationFlags(flags),
-    m_L(const_cast<ideal>(L)), // for debug anyway
-    m_hash()
+    SchreyerSyzygyComputationFlags(flags), LookUpPolicy()
+    m_L(const_cast<ideal>(L)) // for debug anyway
 {
-  assume( flags.m_rBaseRing == m_rBaseRing );
   if( L != NULL )
     Initialize(L);
 }
@@ -1030,30 +1027,26 @@ bool CLeadingTerm::DivisibilityCheck(const poly m, const poly t, const unsigned 
     return false;
 
   return _p_LmDivisibleByNoComp(p, m, t, r);
-
 //  return p_LmShortDivisibleByNoComp(p, p_sev, product, not_sev, r);
-
 }
 
 bool CReducerFinder::IsDivisible(const poly product) const
 {
   const ring& r = m_rBaseRing;
   
-  const long comp = p_GetComp(product, r);
   const unsigned long not_sev = ~p_GetShortExpVector(product, r);
 
+  const long comp = p_GetComp(product, r);
   assume( comp >= 0 );
+  
+  TReducers* reducers = LookUp( comp );
 
-  CReducersHash::const_iterator it = m_hash.find(comp); // same module component
-
-  if( it == m_hash.end() )
+  if( reducers == NULL )
     return false;
 
   assume( m_L != NULL );  
 
-  const TReducers& reducers = it->second;
-
-  for(TReducers::const_iterator vit = reducers.begin(); vit != reducers.end(); vit++ )
+  for(TReducers::const_iterator vit = reducers->begin(); vit != reducers->end(); vit++ )
   {
     assume( m_L->m[(*vit)->m_label] == (*vit)->m_lt );
 
@@ -1074,7 +1067,7 @@ bool CReducerFinder::IsDivisible(const poly product) const
 
 
 #ifndef NDEBUG
-void CReducerFinder::DebugPrint() const
+void ModulePolicy::DebugPrint() const
 {
   const ring& r = m_rBaseRing;
 

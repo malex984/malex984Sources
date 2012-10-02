@@ -134,14 +134,15 @@ class CLeadingTerm
     void operator=(const CLeadingTerm&);
 };
 
-
-// TODO: needs a specialized variant without a component (hash!)
-class CReducerFinder: public SchreyerSyzygyComputationFlags
+struct ModulePolicy
 {
-  private:
+  public:
     typedef long TComponentKey;
     typedef std::vector<const CLeadingTerm*> TReducers;
+
     typedef std::map< TComponentKey, TReducers> CReducersHash;
+
+    ModulePolicy(): m_hash() {}
 
 /*
     /// TODO:
@@ -155,7 +156,7 @@ class CReducerFinder: public SchreyerSyzygyComputationFlags
         const_iterator(TBase start, TBase end):
             TBase(start), m_the_end(end)
         { find_proper(); }
-                    
+
       public:        
         inline bool at_end() const { return m_the_end == (*this); }
 
@@ -164,7 +165,7 @@ class CReducerFinder: public SchreyerSyzygyComputationFlags
           find_next();
           return *this;
         }
-        
+
         inline const_iterator operator++(int)
         {
           const_iterator tmp(*this);
@@ -174,7 +175,7 @@ class CReducerFinder: public SchreyerSyzygyComputationFlags
 
       protected:
         bool is_proper() const; // difficult - needs all of CReducerFinder internals!?
-        
+
         inline void find_next()
         {
           while (!at_end())
@@ -186,32 +187,64 @@ class CReducerFinder: public SchreyerSyzygyComputationFlags
     };
 */
     
+
+    inline bool IsNonempty() const { return !m_hash.empty(); }
+
+    inline void AddTerm(const poly a, const unsigned int c, const CLeadingTerm* lt)
+    {
+      m_hash[c].push_back( lt );
+    }
+
+    inline TReducers* LookUp(const unsigned int comp) const
+    {
+      CReducersHash::const_iterator it = m_hash.find(comp); // same module component
+
+      if( it == m_hash.end() )
+        return NULL;
+
+      return &(it->second);
+    }
+    
+//    bool FindNext(const poly product, typename TReducers::const_iterator& itr) const;
+    
+    inline void ApplyToEach( void (* function)(const CLeadingTerm*) )
+    {
+      for( CReducersHash::const_iterator it = m_hash.begin(); it != m_hash.end(); it++)
+        for(TReducers::const_iterator vit = reducers.begin(); vit != reducers.end(); vit++ )
+          function( it->first, *vit );
+    }
+
+    ~ModulePolicy();
+
+  private:
+    CReducersHash m_hash; /// can also be replaced with a vector indexed by components
+    
+
+}
+
+
+// TODO: needs a specialized variant without a component (hash!)
+template < class LookUpPolicy = ModulePolicy >
+class CReducerFinder: public SchreyerSyzygyComputationFlags, public LookUpPolicy
+{
   public:
     /// goes over all leading terms
     CReducerFinder(const ideal L, const SchreyerSyzygyComputationFlags& flags);
 
     void Initialize(const ideal L);
 
-    ~CReducerFinder();
+//    ~CReducerFinder();
 
     // TODO: save shortcut (syz: |-.->) LM(LM(m) * "t") -> syz?
     poly // const_iterator // TODO: return const_iterator it, s.th: it->m_lt is the needed 
-    FindReducer(const poly product, const poly syzterm, const CReducerFinder& checker) const;
+    FindReducer(const poly product, const poly syzterm, const CReducerFinder<ModulePolicy>& lSyzchecker) const;
 
     bool IsDivisible(const poly q) const;
 
-    bool IsNonempty() const { return !m_hash.empty(); }
-
-    poly FindReducer(const poly multiplier, const poly monom, const poly syzterm, const CReducerFinder& checker) const;
-    
-#ifndef NDEBUG
-    void DebugPrint() const;
-#endif
-    
+    poly FindReducer(const poly multiplier, const poly monom, const poly syzterm, const CReducerFinder<ModulePolicy>& lSyzchecker) const;
+   
   private:
     ideal m_L; ///< only for debug
-
-    CReducersHash m_hash; // can also be replaced with a vector indexed by components
 
   private:
     CReducerFinder(const CReducerFinder&);

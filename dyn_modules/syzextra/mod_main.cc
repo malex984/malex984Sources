@@ -36,6 +36,8 @@
 #include "myNF.h"
 #include "syzextra.h"
 
+
+#define HAVE_GOOGLE_PROFILER 1   
 #ifdef HAVE_GOOGLE_PROFILER
 #include <google/profiler.h>
 #endif // HAVE_GOOGLE_PROFILER  

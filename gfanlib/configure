@@ -16085,7 +16085,7 @@ fi
 
 
 
-DEFAULT_CHECKING_PATH="/usr /usr/local /sw /opt/local"
+DEFAULT_CHECKING_PATH="/usr /usr/local /sw /opt/local "
 
 
 # Check whether --with-gmp was given.
@@ -16105,13 +16105,16 @@ min_gmp_version=3.1.1
 BACKUP_CFLAGS=${CFLAGS}
 BACKUP_LIBS=${LIBS}
 
+echo "WARNING: CPATH: ${CPATH} LIBRARY_PATH: ${LIBRARY_PATH}"
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GMP >= $min_gmp_version" >&5
 $as_echo_n "checking for GMP >= $min_gmp_version... " >&6; }
 
 for GMP_HOME in ${GMP_HOME_PATH}
   do
 	if test -r "$GMP_HOME/include/gmp.h"; then
-
+# -Wl,-R${GMP_HOME}/lib
 		if test "x$GMP_HOME" != "x/usr"; then
 			GMP_CFLAGS="-I${GMP_HOME}/include"
 			GMP_LIBS="-L${GMP_HOME}/lib -lgmp"
@@ -16120,9 +16123,12 @@ for GMP_HOME in ${GMP_HOME_PATH}
 			GMP_LIBS="-lgmp"
 		fi
 
-		CFLAGS="${CFLAGS} ${GMP_CFLAGS}"
-		LIBS="${LIBS} ${GMP_LIBS}"
+		CFLAGS="${BACKUP_CFLAGS} ${GMP_CFLAGS}"
+		LIBS="${BACKUP_LIBS} ${GMP_LIBS}"
 
+    # According to C. Fieker this would link but would not RUN
+    # (AC_TRY_RUN) due to missing SHARED libgmp.so :(
+    # TODO: set LD_LIBRARY_PATH???
 		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <gmp.h>
@@ -16136,7 +16142,7 @@ mpz_t a; mpz_init (a);
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
-        		if test "$cross_compiling" = yes; then :
+      if test "$cross_compiling" = yes; then :
 
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
 $as_echo "unknown" >&6; }

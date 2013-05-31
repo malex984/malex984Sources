@@ -472,12 +472,12 @@ proc MySort(def M)
     int @DEBUG = !system("with", "ndebug");
   }
 
-  if( typeof( attrib(basering, "SYZCHECK") ) == "int" )
+  if( typeof( attrib(basering, "KERCHECK") ) == "int" )
   {
-    int @SYZCHECK = attrib(basering, "SYZCHECK");
+    int @KERCHECK = attrib(basering, "KERCHECK");
   } else
   {
-    int @SYZCHECK = @DEBUG;
+    int @KERCHECK = @DEBUG; // TODO: @SYZCHECK:(
   }
 
 
@@ -488,14 +488,16 @@ proc MySort(def M)
 
   def @N = M; Sort_c_ds(@N);
   
-  if( @SYZCHECK )
+  if( @KERCHECK )
   {
     def iv = sort(lead(M), "c,ds", 1)[2]; // ,1 => reversed! // TODO: not needed?
     def @M = M;
     @M = M[iv];
     
     // 0^th syz. property
-    if( size(module( matrix(@N) - matrix(@M) )) > 0 )
+    if(size(@N) * size(@M) > 0 )
+    {
+    if( size(module( matrix(module(matrix(@N))) - matrix(module(matrix(@M))) )) > 0 )
     {
       "@M:"; @M;
       "@N:"; @N;
@@ -503,9 +505,10 @@ proc MySort(def M)
       "module( matrix(@N) - matrix(@M) ): ";
       module( matrix(@N) - matrix(@M) );
 
-      "ERROR: wrong sorting in 'MySort': @N != @M!!!";
+      "ERROR: MySort: wrong sorting in 'MySort': @N != @M!!!";
       $
     }
+    } 
   }
 
   if( @DEBUG )
@@ -540,7 +543,14 @@ proc MySort(def M)
   {
     @SYZCHECK = attrib(SSinit, "SYZCHECK");
   }
-  
+
+  int @KERCHECK = @SYZCHECK;
+
+  if( typeof( attrib(SSinit, "KERCHECK") ) == "int" )
+  {
+    @KERCHECK = attrib(SSinit, "KERCHECK");
+  }
+
   if( @DEBUG )
   {
     "SSinit::Input";
@@ -720,6 +730,7 @@ proc MySort(def M)
   
   attrib(S, "DEBUG", @DEBUG);
   attrib(S, "SYZCHECK", @SYZCHECK);
+  attrib(S, "KERCHECK", @KERCHECK);
   
   if( @DEBUG )
   {
@@ -782,7 +793,15 @@ proc SSComputeLeadingSyzygyTerms(def L)
   {
     int @SYZCHECK = @DEBUG;
   }
-  
+
+  if( typeof( attrib(basering, "KERCHECK") ) == "int" )
+  {
+    int @KERCHECK = attrib(basering, "KERCHECK");
+  } else
+  {
+    int @KERCHECK = @SYZCHECK;
+  }
+
   if( @DEBUG )
   {
     "SSComputeLeadingSyzygyTerms::Input: ";
@@ -791,7 +810,7 @@ proc SSComputeLeadingSyzygyTerms(def L)
 
   module SS = ComputeLeadingSyzygyTerms(L);
 
-  if( @SYZCHECK )
+  if( @KERCHECK )
   {  
     int i, j, r; 
     int N = ncols(L);
@@ -837,9 +856,11 @@ proc SSComputeLeadingSyzygyTerms(def L)
 
     S = MySort(simplify(S, 2));
 
+    if( size(S) * size(SS) > 0 )
+    {
     if( size(module(matrix(S) - matrix(SS))) > 0 )
     {
-        "ERROR: S != SS ";
+        "ERROR: SSComputeLeadingSyzygyTerms: S != SS ";
 
         "basering: ";
         DetailedPrint(basering);
@@ -854,6 +875,7 @@ proc SSComputeLeadingSyzygyTerms(def L)
         DetailedPrint(module(matrix(S) - matrix(SS)), 2);      
         $
     }
+    }
   }
 
   
@@ -864,8 +886,11 @@ proc SSComputeLeadingSyzygyTerms(def L)
     SS;
   }
   
-  attrib(SS, "isSB", 1); 
-
+  if( size(SS) > 0 )
+  {
+    attrib(SS, "isSB", 1); 
+  }
+  
   return (SS);
 }
 
@@ -886,6 +911,14 @@ proc SSCompute2LeadingSyzygyTerms(def L)
   } else
   {
     int @SYZCHECK = @DEBUG;
+  }
+
+  if( typeof( attrib(basering, "KERCHECK") ) == "int" )
+  {
+    int @KERCHECK = attrib(basering, "KERCHECK");
+  } else
+  {
+    int @KERCHECK = @SYZCHECK;
   }
 
   int @TAILREDSYZ = 1;
@@ -919,6 +952,10 @@ proc SSCompute2LeadingSyzygyTerms(def L)
         $
       }
     }
+  }
+    
+  if( @KERCHECK )
+  {
 
     int i, j, r; 
     int N = ncols(L);
@@ -985,7 +1022,7 @@ proc SSCompute2LeadingSyzygyTerms(def L)
 
     if( size(module(matrix(S) - matrix(SS))) > 0 )
     {
-      "ERROR: S != SS ";
+      "ERROR: SSCompute2LeadingSyzygyTerms: S != SS ";
 
       "basering: ";
       DetailedPrint(basering);
@@ -1268,7 +1305,7 @@ proc SSComputeSyzygy(def L, def T)
   {
     int @SYZCHECK = @DEBUG;
   }
-  
+ 
   
   if( @DEBUG )
   {
@@ -1629,11 +1666,8 @@ example
 
   def S = SSres(M, 0); setring S; S;
   MRES;
+  print(_);
   RES;
-  "";
-  LRES;
-  "";
-  TRES;
 
   kill S; setring r; kill M;
 
@@ -1643,12 +1677,14 @@ example
   ideal M = w^2 - x*z,  w*x - y*z,  x^2 - w*y, x*y - z^2, y^2 - w*z;
   
   def S = SSres(M, 0); setring S; S;
-  MRES;
-  RES;
   "";
   LRES;
   "";
-  TRES;
+  TRES; 
+  "";
+  MRES;
+  print(_);
+  RES;
 }
 
 proc SSres(def M, int l)
@@ -1902,6 +1938,7 @@ proc TestSSresAttribs(def M)
 proc testALLA()
 {
   attrib(SSinit, "SYZCHECK", 1); // TODO: only for now!!
+  attrib(SSinit, "KERCHECK", 0); // TODO: only for now!!
 
   ring r; r; ideal M = maxideal(1); M;
   TestSSresAttribs(M);  
@@ -1943,4 +1980,3 @@ proc testALLA()
 }
 
 // TODO: betti!!!
-

@@ -78,3 +78,5 @@ syzextra_la_LDFLAGS = ${P_PROCS_MODULE_LDFLAGS}
 # # endif
 #
 # EXTRA_DIST = syzextra.tst ederc.tst test_clear_enum.tst test.sh $(TESTS)
+
+CLEANFILES = SimpleTests.json

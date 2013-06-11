@@ -1110,7 +1110,7 @@ static BOOLEAN _TraverseTail(leftv res, leftv h)
 static BOOLEAN _ComputeResolution(leftv res, leftv h)
 {
   const SchreyerSyzygyComputationFlags attributes(currRingHdl);
-
+   
   const BOOLEAN __DEBUG__      = attributes.__DEBUG__;
    
   const char* usage = "`ComputeResolution(<ideal/module>[,int])` expected";
@@ -1143,8 +1143,6 @@ static BOOLEAN _ComputeResolution(leftv res, leftv h)
   assume( IDELEMS(L) == size );
   
   h = h->Next();
-
-  // tail
   if ((h==NULL) || (h->Typ()!=IDEAL_CMD && h->Typ() !=MODUL_CMD) || (h->Data() == NULL))
   {
     WerrorS(usage);
@@ -1190,9 +1188,14 @@ static BOOLEAN _ComputeResolution(leftv res, leftv h)
   int index = 0;
   _res->fullres[index++] = M;
 
+//  if (attributes.__TREEOUTPUT__)
+//    Print("{ \"RESOLUTION: HYBRIDNF:%d, TAILREDSYZ: %d, LEAD2SYZ: %d, IGNORETAILS: %d\": [\n", attributes.__HYBRIDNF__, attributes.__TAILREDSYZ__, attributes.__LEAD2SYZ__, attributes.__IGNORETAILS__);
+   
   while( (!idIs0(L)) && (index < length))
   {
+    attributes.nextSyzygyLayer();
     ideal LL, TT;  
+     
     ComputeSyzygy(L, T, LL, TT, attributes);
 
     if( __DEBUG__ )
@@ -1225,6 +1228,8 @@ static BOOLEAN _ComputeResolution(leftv res, leftv h)
   
     _res->fullres[index++] = M; // ???
   }
+//  if (attributes.__TREEOUTPUT__)
+//    PrintS("] }\n");
 
   id_Delete(&L, r); id_Delete(&T, r);
   

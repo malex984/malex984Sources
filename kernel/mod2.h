@@ -9,12 +9,14 @@
 #ifndef MOD2_H
 #define MOD2_H
 
-
 #ifdef HAVE_CONFIG_H
 /* config.h is a private header that will not be installed and thus cannot be unconditionally included */
 # include "config.h"
 #endif /* HAVE_CONFIG_H */
 
+#ifndef CXXFLAGS
+#error "PLEASE '#include \"config.h\"' before mod2.h!!!"
+#endif
 
 #include <misc/auxiliary.h>
 

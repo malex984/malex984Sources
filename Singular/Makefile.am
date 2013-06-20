@@ -28,24 +28,18 @@ AMLDFLAGS = -L${top_builddir}/Singular -L${top_builddir}/numeric -L${top_builddi
 
 ########################### Dynamic Modules... #########################
 
-moduledir = $(libexecdir)/singular/MOD
-
-module_LTLIBRARIES =
-
-if PYTHON_MODULE
 
 if ENABLE_P_PROCS_DYNAMIC
-module_LTLIBRARIES += pyobject.la
+  moduledir = $(libexecdir)/singular/MOD
 else
-
- if SI_EMBED_PYTHON
-   EMBED_PYOBJECT=pyobject.la
-   module_LTLIBRARIES += ${EMBED_PYOBJECT}
- endif
-
+  moduledir = $(libdir)/singular
 endif
 
+if SI_EMBED_PYTHON
+  EMBED_PYOBJECT = pyobject.la ${top_builddir}/dyn_modules/syzextra/syzextra.la
 endif
+
+module_LTLIBRARIES = pyobject.la
 
 
 ##########################################################################
@@ -61,7 +55,7 @@ pyobject_la_CFLAGS   = @PYTHON_CSPEC@
 # ${NODEBUGCXXFLAGS} 
 # pyobject_g_la_CXXFLAGS = ${DEBUGCXXFLAGS} @PYTHON_CSPEC@
 
-pyobject_la_LDFLAGS = -module ${AMLDFLAGS} @PYTHON_LSPEC@
+pyobject_la_LDFLAGS = ${AMLDFLAGS} -module @PYTHON_LSPEC@
 
 ###  -export-dynamic -shared -module -avoid-version (add to all DMs?)
 
@@ -214,7 +208,7 @@ SingularHEADERS =    Cache.h \
 nodist_libSingular_la_SOURCES = feOpt.inc iparith.inc ${EMBED_PYOBJECT}
 # nodist_libSingular_g_la_SOURCES = iparith.inc
 
-libSingular_la_LDFLAGS    = -release ${PACKAGE_VERSION} ${EMBED_PYOBJECT} \
+libSingular_la_LDFLAGS    =  -release ${PACKAGE_VERSION} ${AMLDFLAGS} ${EMBED_PYOBJECT} \
 -lnumeric -lkernel -lpolys -lcoeffs -lreporter -lmisc \
 $(FACTORY_LIBS) -lomalloc -lresources $(FLINT_LIBS) $(NTL_LIBS) $(GMP_LIBS) ${USEPPROCSDYNAMICLDFLAGS} ${USEPPROCSDYNAMICLD}
 
@@ -446,7 +440,7 @@ test_d_r_LDADD = libSingular.la
 # test_d_r_CPPFLAGS = ${AM_CPPFLAGS} -DHAVE_CONFIG_H
 # test_d_g_CPPFLAGS = ${AM_CPPFLAGS} -DHAVE_CONFIG_H
 
-test_d_r_LDFLAGS = ${AMLDFLAGS}
+#test_d_r_LDFLAGS = ${AMLDFLAGS}
 # test_d_g_LDFLAGS = ${AMLDFLAGS}
 
 #########################################################

@@ -111,7 +111,8 @@ AC_DEFUN([SING_CHECK_SET_ARGS], [
   AC_LANG_PUSH([C++])
   AX_APPEND_COMPILE_FLAGS(${OPTFLAGS}, [CXXFLAGS])
   AX_APPEND_COMPILE_FLAGS([-fno-exceptions -fno-rtti -fpermissive], [CXXFLAGS])
-  # AX_APPEND_COMPILE_FLAGS([-fno-implicit-templates], [CXXFLAGS]) # problems due to STL
+  # There may be problems due to STL with the following:
+  AX_APPEND_COMPILE_FLAGS([-fno-implicit-templates], [CXXFLAGS]) 
   AC_LANG_POP([C++])
   AX_APPEND_LINK_FLAGS(${OPTFLAGS}) 
   AX_APPEND_LINK_FLAGS([-fno-exceptions -fno-rtti -fpermissive])

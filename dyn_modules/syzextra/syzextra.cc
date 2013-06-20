@@ -66,7 +66,10 @@ BEGIN_NAMESPACE_SINGULARXX     BEGIN_NAMESPACE(SYZEXTRA)
 BEGIN_NAMESPACE(SORT_c_ds)
 
 
-#ifdef _GNU_SOURCE
+#if ( defined(__APPLE__) )
+static int cmp_c_ds(void *R, const void *p1, const void *p2) 
+{   
+#elif ( defined(_GNU_SOURCE) )
 static int cmp_c_ds(const void *p1, const void *p2, void *R)
 {
 #else
@@ -74,7 +77,6 @@ static int cmp_c_ds(const void *p1, const void *p2)
 {
   void *R = currRing; 
 #endif
-
   const int YES = 1;
   const int NO = -1;
 
@@ -153,7 +155,8 @@ static int cmp_c_ds(const void *p1, const void *p2)
   return 0;  
 }
 
-   
+/*   
+/// TODO: make use of known exp. structure (late optimization)
 static int cmp_poly(const poly &a, const poly &b)
 {
   const int YES = 1;
@@ -199,6 +202,7 @@ static int cmp_poly(const poly &a, const poly &b)
 
   return 0;  
 }
+*/
    
 END_NAMESPACE
 /* namespace SORT_c_ds */
@@ -389,10 +393,12 @@ void Sort_c_ds(const ideal id, const ring r)
 {
   const int sizeNew = IDELEMS(id);
 
-#ifdef _GNU_SOURCE
-#define qsort_my(m, s, ss, r, cmp) qsort_r(m, s, ss, cmp, r)
+#if ( defined(__APPLE__) )
+# define qsort_my(m, s, ss, r, cmp) qsort_r(m, s, ss, r, cmp)
+#elif ( defined(_GNU_SOURCE) )
+# define qsort_my(m, s, ss, r, cmp) qsort_r(m, s, ss, cmp, r)
 #else
-#define qsort_my(m, s, ss, r, cmp) qsort_r(m, s, ss, cmp)
+# define qsort_my(m, s, ss, r, cmp) qsort_r(m, s, ss, cmp)
 #endif
   
   if( sizeNew >= 2 )

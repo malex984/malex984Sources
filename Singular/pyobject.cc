@@ -30,6 +30,8 @@
 #include <kernel/febase.h>
 #include <misc/intvec.h>
 
+#include <polys/mod_raw.h>
+
 #include "subexpr.h"
 #include "lists.h"
 #include "ipid.h"

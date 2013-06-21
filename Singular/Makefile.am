@@ -16,14 +16,13 @@ ACLOCAL_AMFLAGS = -I ../m4
 # NODEBUGDEFS = -DNDEBUG -DOM_NDEBUG
 # 
 
-
 if ENABLE_FACTORY
   USE_FACTORY = -L${top_builddir}/factory
 else
   USE_FACTORY =
 endif
 
-AM_CPPFLAGS = -I${top_srcdir} -I${top_builddir} -I${top_srcdir}/numeric -I${top_builddir}/numeric -I${top_srcdir}/kernel -I${top_builddir}/kernel -I${top_srcdir}/libpolys -I${top_builddir}/libpolys $(GMP_CFLAGS) -I${top_srcdir}/factory/include -I${top_builddir}/factory/include $(FACTORY_CFLAGS) $(NTL_CFLAGS) $(FLINT_CFLAGS) -DHAVE_CONFIG_H
+AM_CPPFLAGS = -I${top_srcdir} -I${top_builddir} -I${top_srcdir}/numeric -I${top_builddir}/numeric -I${top_srcdir}/kernel -I${top_builddir}/kernel -I${top_srcdir}/libpolys -I${top_builddir}/libpolys $(GMP_CFLAGS) -I${top_srcdir}/factory/include -I${top_builddir}/factory/include $(FACTORY_CFLAGS) $(NTL_CFLAGS) $(FLINT_CFLAGS) ${EMBED_PYOBJECT_CFLAGS} -DHAVE_CONFIG_H
 AMLDFLAGS = -L${top_builddir}/Singular -L${top_builddir}/numeric -L${top_builddir}/kernel -L${top_builddir}/libpolys/polys  -L${top_builddir}/libpolys/coeffs -L${top_builddir}/libpolys/reporter -L${top_builddir}/libpolys/misc $(USE_FACTORY) -L${top_builddir}/omalloc -L${top_builddir}/resources
 
 ########################### Dynamic Modules... #########################
@@ -61,7 +60,6 @@ pyobject_la_CFLAGS   = @PYTHON_CSPEC@
 
 pyobject_la_LDFLAGS = ${AMLDFLAGS} @PYTHON_LSPEC@ -module -export-dynamic -avoid-version -flat_namespace -weak_reference_mismatches weak -undefined dynamic_lookup
 ###  -export-dynamic -shared -module -avoid-version (add to all DMs?)
-
 
 ########################### libSingular* #########################
 

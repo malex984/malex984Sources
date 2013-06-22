@@ -155,6 +155,7 @@ extern "C" {
 #define DL_IMPLEMENTED
 
 static void* kernel_handle = NULL;
+   
 int dynl_check_opened(
   char *filename    /* I: filename to check */
   )

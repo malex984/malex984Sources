@@ -72,6 +72,15 @@ void* dynl_open_binary_warn(const char* binary_name, const char* msg)
     snprintf(binary_name_so, binary_name_so_length, "%s%s%s%s%s%s", bin_dir, DIR_SEPP,"MOD",DIR_SEPP,binary_name, DL_TAIL);
     handle = dynl_open(binary_name_so);
 
+#ifndef NDEBUG
+    if(handle != NULL)
+    {   
+      Warn("Could not find dynamic library: %s%s (tried %s)",
+              binary_name, DL_TAIL,binary_name_so);
+      Warn("Error message from system: %s", dynl_error());
+      if (msg != NULL) Warn("[%s]", msg);	  
+    }
+#endif     
   }
 
   // try P_PROCS_DIR (%P)
@@ -93,7 +102,7 @@ void* dynl_open_binary_warn(const char* binary_name, const char* msg)
       Warn("Could not find dynamic library: %s%s (tried %s)",
               binary_name, DL_TAIL,binary_name_so);
       Warn("Error message from system: %s", dynl_error());
-      if (msg != NULL) Warn("%s", msg);
+      if (msg != NULL) Warn("[%s]", msg);
       Warn("See the INSTALL section in the Singular manual for details.");
       warn_handle = TRUE;
   }

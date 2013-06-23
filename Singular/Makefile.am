@@ -27,31 +27,26 @@ AM_CPPFLAGS = -I${top_srcdir} -I${top_builddir} -I${top_srcdir}/numeric -I${top_
 AMLDFLAGS = -L${top_builddir}/Singular -L${top_builddir}/numeric -L${top_builddir}/kernel -L${top_builddir}/libpolys/polys  -L${top_builddir}/libpolys/coeffs -L${top_builddir}/libpolys/reporter -L${top_builddir}/libpolys/misc $(USE_FACTORY) -L${top_builddir}/omalloc -L${top_builddir}/resources
 
 ########################### Dynamic Modules... #########################
-
-
-EMBED_PYOBJECT = 
-
 if ENABLE_P_PROCS_DYNAMIC
   moduledir = $(libexecdir)/singular/MOD
-else
+else !ENABLE_P_PROCS_DYNAMIC
   moduledir = $(libdir)/singular
-endif
+endif !ENABLE_P_PROCS_DYNAMIC
+
+if PYTHON_USE
+  PY=pyobject.la
+else !PYTHON_USE
+  PY=
+endif !PYTHON_USE
 
 if SI_EMBED_PYTHON
-
-  if PYTHON_USE
-    EMBED_PYOBJECT += pyobject.la
-  endif
-
-  EMBED_PYOBJECT += ${top_builddir}/dyn_modules/syzextra/syzextra.la
-endif
-
-
-
-module_LTLIBRARIES = pyobject.la
-
+  EMBED_PYOBJECT = ${PY} ${top_builddir}/dyn_modules/syzextra/syzextra.la 
+else !SI_EMBED_PYTHON
+  EMBED_PYOBJECT = 
+endif !SI_EMBED_PYTHON
 
 ##########################################################################
+module_LTLIBRARIES = pyobject.la
 
 pyobject_la_SOURCES = pyobject.cc
 

@@ -23,13 +23,16 @@ typedef mgb::GroebnerConfiguration::Coefficient Coefficient;
 typedef mgb::GroebnerConfiguration::VarIndex VarIndex;
 typedef mgb::GroebnerConfiguration::Exponent Exponent;
 typedef mgb::GroebnerConfiguration::BaseOrder BaseOrder;
+typedef mgb::GroebnerConfiguration::Component ComponentCount;
+
 
 // Constructs a Singular ideal.
 class MathicToSingStream {
 public:
-  MathicToSingStream(Coefficient modulus, VarIndex varCount):
+  MathicToSingStream(Coefficient modulus, VarIndex varCount, ComponentCount comCount):
     mModulus(modulus),
     mVarCount(varCount),
+    mComCount(comCount),
     mPolyCount(0),
     mTerm(0),
     mIdeal(0)
@@ -40,7 +43,8 @@ public:
   // Mathic stream interface
 
   Coefficient modulus() const {return mModulus;}
-  VarIndex varCount() const {return mModulus;}
+  VarIndex varCount() const {return mVarCount;} // Fix a bug
+  ComponentCount comCount() const {return mComCount;}
 
   void idealBegin(size_t polyCount) {
     deleteIdeal();
@@ -50,11 +54,12 @@ public:
 
   void appendPolynomialBegin(size_t termCount) {}
 
-  void appendTermBegin() {
+  void appendTermBegin(ComponentCount comp) {
     if (mTerm == 0)
       mTerm = mIdeal->m[mPolyCount] = pInit();
     else
       mTerm = mTerm->next = pInit();
+    p_SetComp( mTerm, comp, currRing );
   }
 
   void appendExponent(VarIndex index, Exponent exponent) {
@@ -92,6 +97,8 @@ private:
 
   const Coefficient mModulus;
   const VarIndex mVarCount;
+  const ComponentCount mComCount;
+
   size_t mPolyCount;
   poly mTerm;
   ::ideal mIdeal;
@@ -316,7 +323,7 @@ bool setOrder(ring r, mgb::GroebnerConfiguration& conf) {
 
 bool prOrderMatrix(ring r) {
   const int varCount = r->N;
-  mgb::GroebnerConfiguration conf(101, varCount);
+  mgb::GroebnerConfiguration conf(101, varCount, 10000); // TODO for Bjarke: code redesign is needed!
   if (!setOrder(r, conf))
     return false;
   const std::vector<Exponent>& gradings = conf.monomialOrder().second;
@@ -486,9 +493,12 @@ BOOLEAN mathicgb(leftv result, leftv arg)
     return TRUE;
   }
 
+  const ideal id = static_cast<const ideal>(arg->Data());
+  const int rk = id_RankFreeModule(id, currRing);
+
   const int characteristic = n_GetChar(currRing);
   const int varCount = currRing->N;
-  mgb::GroebnerConfiguration conf(characteristic, varCount);
+  mgb::GroebnerConfiguration conf(characteristic, varCount, rk);
   if (!setOrder(currRing, conf))
     return TRUE;
   if (TEST_OPT_PROT)
@@ -496,7 +506,6 @@ BOOLEAN mathicgb(leftv result, leftv arg)
 
   mgb::GroebnerInputIdealStream toMathic(conf);
 
-  const ideal id = static_cast<const ideal>(arg->Data());
   const int size = IDELEMS(id);
   toMathic.idealBegin(size);
   for (int i = 0; i < size; ++i) {
@@ -507,7 +516,7 @@ BOOLEAN mathicgb(leftv result, leftv arg)
     toMathic.appendPolynomialBegin(termCount);
 
     for (poly p = origP; p != 0; p = pNext(p)) {
-      toMathic.appendTermBegin();
+      toMathic.appendTermBegin( p_GetComp(p, currRing) );
       for (int i = 1; i <= currRing->N; ++i)
         toMathic.appendExponent(i - 1, pGetExp(p, i));
       const long coefLong = reinterpret_cast<long>(pGetCoeff(p));
@@ -517,7 +526,7 @@ BOOLEAN mathicgb(leftv result, leftv arg)
   }
   toMathic.idealDone();
 
-  MathicToSingStream fromMathic(characteristic, varCount);
+  MathicToSingStream fromMathic(characteristic, varCount, rk);
   mgb::computeGroebnerBasis(toMathic, fromMathic);
 
   result->rtyp=IDEAL_CMD;

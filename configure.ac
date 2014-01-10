@@ -128,6 +128,32 @@ m4_ifval([$3],
 fi[]dnl
 ])])
 
+AC_ARG_WITH(staticmodules, AS_HELP_STRING([--with-staticmodules], [List dynamic modules for static embedding]))
+STATIC_MODULES=[syzextra pyobject]
+
+AS_IF([test "x$with_staticmodules" != "xno"],
+      [CHECK_FOR_FOO([have_foo=yes], [have_foo=no])],
+      [have_foo=no])
+
+AS_IF([test "x$have_foo" = "xyes"],
+      [do_whatever_needed],
+      [AS_IF([test "x$with_foo" = "xyes"],
+             [AC_MSG_ERROR([foo requested but not found])
+      ])
+])
+
+[if test "x$enableval" != "xyes"; then
+STATIC_MODULES=[]
+fi], STATIC_MODULES=[])
+
+m4_define([ax_static_modules])                                                                                                                 
+
+m4_foreach([ax_static_module], m4_split(m4_normalize([$1])),
+          [                                                                                                                                  
+           m4_append([ax_perl_modules],                                                                                                      
+                     [']m4_bpatsubst(ax_perl_module,=,[ ])[' ])                                                                              
+          ]) 
+
 
 AC_DEFINE_UNQUOTED([CC],"$CC",[CC])
 AC_DEFINE_UNQUOTED([CXX],"$CXX",[CXX])

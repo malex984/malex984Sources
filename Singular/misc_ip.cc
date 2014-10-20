@@ -1305,6 +1305,8 @@ void siInit(char *name)
     }
   }
 #endif
+   extern BOOLEAN jjMyPolySqAdd(leftv, leftv);
+   iiAddCproc("kernel","my_sq_poly_add",FALSE,jjMyPolySqAdd);
 // loading standard.lib -----------------------------------------------
   if (! feOptValue(FE_OPT_NO_STDLIB))
   {

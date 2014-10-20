@@ -641,10 +641,6 @@ static inline void n_InpAdd(number &a, number b, const coeffs r)
 static inline number n_Sub(number a, number b, const coeffs r)
 { assume(r != NULL); assume(r->cfSub!=NULL); return r->cfSub(a, b, r); }
 
-/// return the sum of 'a' and 'b', i.e., a+b
-static inline number n_Add(number a, number b, const coeffs r)
-{ assume(r != NULL); assume(r->cfAdd!=NULL); return r->cfAdd(a, b, r); }
-
 /// return the quotient of 'a' and 'b', i.e., a/b;
 /// raise an error if 'b' is not invertible in r
 static inline number n_Div(number a, number b, const coeffs r)
@@ -968,6 +964,18 @@ static inline void n_ClearDenominators(ICoeffsEnumerator& numberCollectionEnumer
 /// print a number (BEWARE of string buffers!)
 /// mostly for debugging
 void   n_Print(number& a,  const coeffs r);
+
+
+/// return the sum of 'a' and 'b', i.e., a+b
+static inline number n_Add(number a, number b, const coeffs r)
+{ assume(r != NULL); assume(r->cfAdd!=NULL); 
+  Print("n_Add(a,b,r) called  with argument a = "); n_Print(a,r); PrintLn();  // Just for DEMO!
+  return r->cfAdd(a, b, r); 
+}
+
+
+/// Just for Demo!
+number n_myAdd(number A, number B, const coeffs R);
 
 #endif
 

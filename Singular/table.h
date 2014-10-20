@@ -610,6 +610,7 @@ struct sValCmd2 dArith2[]=
 //,{D(jjRES),       MRES_CMD,       LIST_CMD,       IDEAL_CMD,  INT_CMD, NO_PLURAL |ALLOW_RING}
 //,{D(jjRES),       MRES_CMD,       LIST_CMD,       MODUL_CMD,  INT_CMD, NO_PLURAL |ALLOW_RING}
 ,{D(nuMPResMat),  MPRES_CMD,      MODUL_CMD,      IDEAL_CMD,  INT_CMD, NO_PLURAL |NO_RING}
+,{D(jjMyAdd),     MYADD_CMD,      NUMBER_CMD,     NUMBER_CMD, NUMBER_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjNEWSTRUCT2),NEWSTRUCT_CMD,  NONE,           STRING_CMD, STRING_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjRES),       MRES_CMD,       RESOLUTION_CMD, IDEAL_CMD,  INT_CMD, ALLOW_PLURAL |ALLOW_RING}
 ,{D(jjRES),       MRES_CMD,       RESOLUTION_CMD, MODUL_CMD,  INT_CMD, ALLOW_PLURAL |ALLOW_RING}
@@ -984,6 +985,7 @@ cmdnames cmds[] =
   { "mres",        0, MRES_CMD ,          CMD_2},
   #endif
   { "mstd",        0, MSTD_CMD ,          CMD_1},
+  { "myadd",       0, MYADD_CMD ,         CMD_2},
   { "nameof",      0, NAMEOF_CMD ,        CMD_1},
   { "names",       0, NAMES_CMD ,         CMD_M},
   { "newstruct",   0, NEWSTRUCT_CMD ,     CMD_23},

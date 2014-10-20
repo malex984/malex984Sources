@@ -552,3 +552,13 @@ void n_Print(number& a,  const coeffs r)
    n_Write(a, r);
    { char* s = StringEndS(); Print("%s", s); omFree(s); }
 }
+
+
+number n_myAdd(number A, number B, const coeffs R)
+{
+  number AA = n_Mult(A, A, R);
+  number BB = n_Mult(B, B, R);
+  n_InpAdd(AA, BB, R);
+  n_Delete(&BB, R);
+  return AA;
+}

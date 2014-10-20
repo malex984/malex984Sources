@@ -61,6 +61,11 @@
 #undef NOSTREAMIO
 #endif
 
+/* Enable demo code for QuickHOWTO in this source branch */
+#ifndef HAVE_DEMO_QUICKHOWTO
+#define HAVE_DEMO_QUICKHOWTO 1
+#endif
+
 // ----------------  end of parts/extensions
 
 // ---------------- Singular standard types etc.

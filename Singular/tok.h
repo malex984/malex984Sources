@@ -101,6 +101,7 @@ enum {
   MONITOR_CMD,
   MPRES_CMD,
   MSTD_CMD,
+  MYADD_CMD, /* Just for Demo*/
   NAMEOF_CMD,
   NAMES_CMD,
   NEWSTRUCT_CMD,
@@ -150,7 +151,7 @@ enum {
   VARSTR_CMD,
   WAIT1ST_CMD,
   WAITALL_CMD,
-  WRITE_CMD,
+  WRITE_CMD,  
   /* start system var section: VECHO */
   VECHO,
   VCOLMAX,

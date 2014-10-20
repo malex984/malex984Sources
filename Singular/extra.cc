@@ -3812,6 +3812,15 @@ static BOOLEAN jjEXTENDED_SYSTEM(leftv res, leftv h)
     }
     else
   #endif
+/* ============= QuickHOWTO: Demo myadd ============================ */
+  #ifdef HAVE_DEMO_QUICKHOWTO
+    if(strcmp(sys_cmd,"myadd_extracc")==0)
+    { // input: h, output: res      
+      extern BOOLEAN jjMyPolySqAdd(leftv, leftv);
+      return jjMyPolySqAdd(res, h);
+    }
+    else	 
+  #endif
 /*==================== Error =================*/
       Werror( "(extended) system(\"%s\",...) %s", sys_cmd, feNotImplemented );
   }

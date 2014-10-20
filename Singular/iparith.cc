@@ -7756,6 +7756,41 @@ static Subexpr jjMakeSub(leftv e)
   r->start =(int)(long)e->Data();
   return r;
 }
+
+static BOOLEAN jjMyAdd(leftv res, leftv v, leftv w)
+{
+  number a=(number)v->Data();
+  number b=(number)w->Data();
+  
+//  res->rtyp = NUMBER_CMD;
+  res->data = (void *)n_myAdd(a, b, currRing->cf);
+  return FALSE;
+}
+
+// this function should not be static due to its use in \ref siInit
+BOOLEAN jjMyPolySqAdd(leftv res, leftv h)
+{
+   PrintS("inside `my_sq_poly_add`(jjMyPolySqAdd)..."); PrintLn();
+   
+   // 1st argument: of type polynomial
+   assume(h->Typ() == POLY_CMD);
+   const poly p1 = (poly)h->Data(); h = h->next;
+       
+   // 2nd argument: of type polynomial
+   assume(h->Typ() == POLY_CMD); 
+   const poly p2 = (poly)h->Data();
+       
+   // no further arguments to this call
+   assume(h->next == NULL);
+       
+   // result should be also polynomial: sum of squares of inputs
+   res->data=(void *)pAdd(ppMult_qq(p1, p1), ppMult_qq(p2, p2));
+   res->rtyp=POLY_CMD; 
+   
+  return FALSE;   
+}
+
+
 #define D(A)    (A)
 #define NULL_VAL NULL
 #define IPARITH
@@ -8934,3 +8969,4 @@ static BOOLEAN check_valid(const int p, const int op)
   #endif
   return FALSE;
 }
+

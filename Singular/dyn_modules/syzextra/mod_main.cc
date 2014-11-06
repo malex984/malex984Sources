@@ -1198,7 +1198,7 @@ static BOOLEAN _ComputeResolution(leftv res, leftv h)
 
 //  if (attributes.__TREEOUTPUT__)
 //    Print("{ \"RESOLUTION: HYBRIDNF:%d, TAILREDSYZ: %d, LEAD2SYZ: %d, IGNORETAILS: %d\": [\n", attributes.__HYBRIDNF__, attributes.__TAILREDSYZ__, attributes.__LEAD2SYZ__, attributes.__IGNORETAILS__);
-
+  
   while( (!idIs0(L)) && (index < length))
   {
     attributes.nextSyzygyLayer();
@@ -1240,10 +1240,14 @@ static BOOLEAN _ComputeResolution(leftv res, leftv h)
 //    PrintS("] }\n");
 
   id_Delete(&L, r); id_Delete(&T, r);
-
+  
   res->data = _res;
   res->rtyp = RESOLUTION_CMD;
 
+#ifdef HAVE_NUMSTATS
+  if( TEST_OPT_PROT )
+#endif
+  
   if( __DEBUG__ )
   {
     Print("ComputeResolution::Output (index: %d): ", index);
@@ -1922,7 +1926,47 @@ static BOOLEAN _m2_end(leftv res, leftv h)
   return FALSE;
 }
 
+// no args.
+// init num stats
+static BOOLEAN _NumberStatsInit(leftv res, leftv h)
+{
+  if ( (h!=NULL) && (h->Typ()!=INT_CMD) )
+  {
+    WerrorS("`NumberStatsInit([<int>])` expected");
+    return TRUE;
+  }
 
+  unsigned long v = 0;
+
+  if( h != NULL )
+    v = (unsigned long)(h->Data());
+
+  number_stats_Init(v);
+  
+  NoReturn(res);
+  return FALSE;
+}
+
+// maybe one arg.
+// print num stats
+static BOOLEAN _NumberStatsPrint(leftv res, leftv h)
+{
+  if ( (h!=NULL) && (h->Typ()!=STRING_CMD) )
+  {
+    WerrorS("`NumberStatsPrint([<string>])` expected");
+    return TRUE;
+  }
+  
+  const char* msg = NULL;
+
+  if( h != NULL )
+    msg = (const char*)(h->Data());
+  
+  number_stats_Print(msg);
+
+  NoReturn(res);
+  return FALSE;
+}
 
 END_NAMESPACE
 
@@ -1982,6 +2026,9 @@ extern "C" int SI_MOD_INIT(syzextra)(SModulFunctions* psModulFunctions)
   ADD("ComputeResolution", FALSE, _ComputeResolution);
 //  ADD("GetAMData", FALSE, GetAMData);
 
+  ADD("NumberStatsInit", FALSE, _NumberStatsInit);
+  ADD("NumberStatsPrint", FALSE, _NumberStatsPrint);
+  
   //  ADD("", FALSE, );
 
 #undef ADD

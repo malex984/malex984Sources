@@ -57,7 +57,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define RTIMER_BENCHMARKING 1
+const int RTIMER_BENCHMARKING  = 0; 
 
 // USING_NAMESPACE_SINGULARXX;
 USING_NAMESPACE( SINGULARXXNAME :: DEBUG )

@@ -9,18 +9,15 @@
 #include <string.h>
 #include <stdlib.h>
 
-
-
-
 #include <misc/auxiliary.h>
-
+#include <omalloc/omalloc.h>
 #include <factory/factory.h>
 
-#include "coeffs.h"
+#include <reporter/reporter.h>
+
+#include <coeffs/coeffs.h>
 #include <coeffs/numbers.h>
 
-#include <reporter/reporter.h>
-#include <omalloc/omalloc.h>
 #include <coeffs/numbers.h>
 #include <coeffs/longrat.h>
 #include <coeffs/modulop.h>
@@ -40,6 +37,10 @@
 #include <polys/ext_fields/transext.h>
 #endif
 
+
+#ifdef HAVE_NUMSTATS
+struct SNumberStatistic number_stats;
+#endif /* HAVE_NUMSTATS */ 
 
 
 //static int characteristic = 0;

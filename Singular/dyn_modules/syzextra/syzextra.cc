@@ -13,6 +13,8 @@
  **/
 /*****************************************************************************/
 
+#include <string.h>
+
 // include header file
 #include <kernel/mod2.h>
 
@@ -54,9 +56,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#define NOPRODUCT 1
+#define RTIMER_BENCHMARKING 1
 
 // USING_NAMESPACE_SINGULARXX;
 USING_NAMESPACE( SINGULARXXNAME :: DEBUG )
@@ -67,6 +68,83 @@ BEGIN_NAMESPACE_SINGULARXX     BEGIN_NAMESPACE(SYZEXTRA)
 
 BEGIN_NAMESPACE_NONAME
 
+#ifndef SING_NDEBUG                                                                                                                          
+ring SBucketFactory::_GetBucketRing(const SBucketFactory::Bucket& bt)
+{                                                                                                                                            
+  assume( bt != NULL );                                                                                                                      
+  return sBucketGetRing(bt);                                                                                                                 
+}                                                                                                                                            
+
+bool SBucketFactory::_IsBucketEmpty(const SBucketFactory::Bucket& bt)
+{                                                                                                                                            
+  assume( bt != NULL );                                                                                                                      
+  return sIsEmpty(bt);                                                                                                                       
+}
+#endif
+
+SBucketFactory::Bucket SBucketFactory::_CreateBucket(const ring r)
+{
+  const Bucket bt = sBucketCreate(r);
+
+  assume( bt != NULL );
+  assume( _IsBucketEmpty(bt) );
+  assume( r == _GetBucketRing(bt) );
+
+  return bt;
+}
+
+void SBucketFactory::_DestroyBucket(SBucketFactory::Bucket & bt)
+{
+  if( bt != NULL )
+  {
+    assume( _IsBucketEmpty(bt) );
+    sBucketDestroy( &bt );
+    bt = NULL;
+  }
+}  
+
+class SBucketWrapper
+{
+  typedef SBucketFactory::Bucket Bucket;
+  
+  private:
+    Bucket m_bucket;
+
+    SBucketFactory& m_factory;
+  public:    
+    SBucketWrapper(const ring r, SBucketFactory& factory):
+        m_bucket( factory.getBucket(r) ),
+        m_factory( factory )
+    {}
+
+    ~SBucketWrapper()
+    {
+      m_factory.putBucket( m_bucket );
+    }
+
+  public:
+
+    /// adds p to the internal bucket
+    /// destroys p, l == length(p)
+    inline void Add( poly p, const int l )
+    {
+      assume( pLength(p) == l );
+      sBucket_Add_p( m_bucket, p, l );
+    }
+
+    /// adds p to the internal bucket
+    /// destroys p
+    inline void Add( poly p ){ Add(p, pLength(p)); }
+
+    poly ClearAdd()
+    {
+      poly p; int l;
+      sBucketClearAdd(m_bucket, &p, &l);
+      assume( pLength(p) == l );
+      return p;
+    }    
+};
+   
 static inline poly pp_Add_qq( const poly a, const poly b, const ring R)
 {
   return p_Add_q( p_Copy(a, R), p_Copy(b, R), R );
@@ -457,12 +535,12 @@ void SchreyerSyzygyComputation::CleanUp()
 
   id_Delete(const_cast<ideal*>(&m_idTails), m_rBaseRing); // TODO!!!
 
-  if( m_sum_bucket != NULL )
+/*if( m_sum_bucket != NULL )
   {
     assume ( sIsEmpty(m_sum_bucket) );
     sBucketDestroy(&m_sum_bucket);
     m_sum_bucket = NULL;
-  }
+  }*/
 
   if( m_spoly_bucket != NULL )
   {
@@ -611,8 +689,7 @@ void SchreyerSyzygyComputation::SetUpTailTerms()
       const int k = m_div.PreProcessTerm(t, m_checker); // 0..3
       assume( 0 <= k && k <= 3 );
 
-      if( __PROT__ )
-        pp[k]++;
+      pp[k]++; // collect stats
 
       if( k )
       {
@@ -641,10 +718,12 @@ void SchreyerSyzygyComputation::SetUpTailTerms()
 #endif
 
   if( __PROT__ )
+  {
     Print("(PP/ST: {c: %lu, C: %lu, P: %lu} + %lu)", pp[1], pp[2], pp[3], pp[0]);
-
-  
+    m_stat[0] += pp [0]; m_stat[1] += pp [1]; m_stat[2] += pp [2]; m_stat[3] += pp [3];
+  }
 }
+
 /*
   m_idTailTerms.resize( IDELEMS(idTails) );
 
@@ -670,6 +749,15 @@ void SchreyerSyzygyComputation::SetUpTailTerms()
   }
 */
 
+void SchreyerSyzygyComputation::PrintStats() const
+{
+  Print("SchreyerSyzygyComputation Stats: (PP/ST: {c: %lu, C: %lu, P: %lu} + %lu, LOT: %lu, LCM: %lu, ST:%lu, LK: %lu {*: %lu})\n",
+        m_stat[1], m_stat[2], m_stat[3], m_stat[0],
+        m_stat[4], m_stat[5],
+        m_stat[8],
+        m_stat[6] + m_stat[7], m_stat[7]
+       );
+}
 
 
 ideal SchreyerSyzygyComputation::Compute1LeadingSyzygyTerms()
@@ -749,7 +837,7 @@ ideal SchreyerSyzygyComputation::Compute1LeadingSyzygyTerms()
     }
   }
 
-//   if( __DEBUG__ && FALSE )
+//   if( __DEBUG__ & FALSE )
 //   {
 //     PrintS("ComputeLeadingSyzygyTerms::Temp0: \n");
 //     dPrint(newid, r, r, 0);
@@ -761,7 +849,7 @@ ideal SchreyerSyzygyComputation::Compute1LeadingSyzygyTerms()
   // sort(newid, "C,ds")[1]???
   id_DelDiv(newid, r); // #define SIMPL_LMDIV 32
 
-//   if( __DEBUG__ && FALSE )
+//   if( __DEBUG__ & FALSE )
 //   {
 //     PrintS("ComputeLeadingSyzygyTerms::Temp1: \n");
 //     dPrint(newid, r, r, 0);
@@ -872,7 +960,7 @@ ideal SchreyerSyzygyComputation::Compute2LeadingSyzygyTerms()
     }
   }
 
-//   if( __DEBUG__ && FALSE )
+//   if( __DEBUG__ & FALSE )
 //   {
 //     PrintS("Compute2LeadingSyzygyTerms::Temp0: \n");
 //     dPrint(newid, r, r, 0);
@@ -884,7 +972,7 @@ ideal SchreyerSyzygyComputation::Compute2LeadingSyzygyTerms()
       // sort(newid, "C,ds")[1]???
     id_DelDiv(newid, r); // #define SIMPL_LMDIV 32
 
-//     if( __DEBUG__ && FALSE )
+//     if( __DEBUG__ & FALSE )
 //     {
 //       PrintS("Compute2LeadingSyzygyTerms::Temp1 (deldiv): \n");
 //       dPrint(newid, r, r, 0);
@@ -909,7 +997,7 @@ ideal SchreyerSyzygyComputation::Compute2LeadingSyzygyTerms()
     id_Delete(&newid, r);
     newid = tmp;
 
-//     if( __DEBUG__ && FALSE )
+//     if( __DEBUG__ & FALSE )
 //     {
 //       PrintS("Compute2LeadingSyzygyTerms::Temp1 (std): \n");
 //       dPrint(newid, r, r, 0);
@@ -927,11 +1015,7 @@ ideal SchreyerSyzygyComputation::Compute2LeadingSyzygyTerms()
 poly SchreyerSyzygyComputation::TraverseNF(const poly a, const poly a2) const
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   const ideal& L = m_idLeads;
@@ -967,15 +1051,11 @@ poly SchreyerSyzygyComputation::TraverseNF(const poly a, const poly a2) const
 
   poly aa = leadmonom(a, R); assume( aa != NULL); // :(
 
-  poly t = TraverseTail(aa, r);
-
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
+
+  poly t = TraverseTail(aa, r);
   
   if( a2 != NULL )
   {
@@ -994,39 +1074,36 @@ poly SchreyerSyzygyComputation::TraverseNF(const poly a, const poly a2) const
 
     assume( r2 >= 0 && r2 < IDELEMS(T) );
 
-    t = p_Add_q(a2, p_Add_q(t, TraverseTail(aa2, r2), R), R);
-
+    poly s =  TraverseTail(aa2, r2);
+    
     p_Delete(&aa2, R);
 
-
-#ifndef SING_NDEBUG
-    if( __DEBUG__ )
-    {
-      m_div.Verify();
-      m_checker.Verify();
-    }
-#endif
-
+    
     if( __TREEOUTPUT__ )
     {
-       PrintS("], \"noderesult\": \"");
-       writeLatexTerm(t, R, true, false);
-       PrintS("\" },");
+      PrintS("], \"noderesult\": \"");
+      writeLatexTerm(s, R, true, false);
+      PrintS("\" },");
     }
-     
-    
+
+    t = p_Add_q(a2, p_Add_q(t, s, R), R);
+
+#ifndef SING_NDEBUG
+    if( __DEBUG__ )    {      m_div.Verify();      m_checker.Verify();    }
+#endif
+   
   } else
-    t = p_Add_q(t, ReduceTerm(aa, L->m[r], a), R);
+    t = p_Add_q(t, ReduceTerm(aa, L->m[r], a), R); // should be identical to bove with a2
 
   p_Delete(&aa, R);
 
   if( __TREEOUTPUT__ )
   {
-     poly tt = pp_Add_qq( a, t, R);    
+//     poly tt = pp_Add_qq( a, t, R);
      PrintS("], \"noderesult\": \"");
-     writeLatexTerm(tt, R, true, false);
+     writeLatexTerm(t, R, true, false);
      PrintS("\" },");
-     p_Delete(&tt, R);
+//     p_Delete(&tt, R);
   }
 #ifndef SING_NDEBUG
   if( __DEBUG__ )
@@ -1038,11 +1115,7 @@ poly SchreyerSyzygyComputation::TraverseNF(const poly a, const poly a2) const
 #endif
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
   
   return t;
@@ -1051,11 +1124,7 @@ poly SchreyerSyzygyComputation::TraverseNF(const poly a, const poly a2) const
 void SchreyerSyzygyComputation::ComputeSyzygy()
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   assume( m_idLeads != NULL );
@@ -1067,43 +1136,42 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
   ideal& TT = m_syzTails;
   const ring& R = m_rBaseRing;
 
-  if( m_sum_bucket == NULL )
-    m_sum_bucket = sBucketCreate(R);
-
-  assume ( sIsEmpty(m_sum_bucket) );
+//  if( m_sum_bucket == NULL )
+//    m_sum_bucket = sBucketCreate(R);
+//  assume ( sIsEmpty(m_sum_bucket) );
 
   if( m_spoly_bucket == NULL )
     m_spoly_bucket = kBucketCreate(R);
 
 
   assume( IDELEMS(L) == IDELEMS(T) );
-#ifndef SING_NDEBUG
-  int t, r;
+
+#ifdef SING_NDEBUG
+  int t, r; // for rtimer benchmarking in prot realease mode
 #endif
 
   if( __TREEOUTPUT__ )
     Print("\n{ \"syzygylayer\": \"%d\", \"hybridnf\": \"%d\", \"diagrams\": \n[", __SYZNUMBER__, __HYBRIDNF__ );
   
-  if( __PROT__ )
-    Print("SYZ{%d}:", __SYZNUMBER__ );
+  if( __PROT__ ) Print("\n[%d]", __SYZNUMBER__ );
 
   if( m_syzLeads == NULL )
   {
-#ifndef SING_NDEBUG
-    if( __PROT__ )
+    if( __PROT__ & RTIMER_BENCHMARKING )
     {
+#ifdef SING_NDEBUG
       t = getTimer(); r = getRTimer();
       Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::ComputeLeadingSyzygyTerms: t: %d, r: %d\n", r, t, r);
-    }
 #endif
+    }
     ComputeLeadingSyzygyTerms( __LEAD2SYZ__ && !__IGNORETAILS__ ); // 2 terms OR 1 term!
-#ifndef SING_NDEBUG
-    if( __PROT__ )
+    if( __PROT__ & RTIMER_BENCHMARKING )
     {
+#ifdef SING_NDEBUG
       t = getTimer() - t; r = getRTimer() - r;
       Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::ComputeLeadingSyzygyTerms: dt: %d, dr: %d\n", getRTimer(), t, r);
-    }
 #endif
+    }
 
   }
 
@@ -1124,32 +1192,25 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
   // use hybrid (Schreyer NF) method?
   const bool method = (__HYBRIDNF__  == 1); //  || (__HYBRIDNF__ == 2 && __SYZNUMBER__ < 3);
 
-  if( __PROT__ )
-     {
-	if (method)
-	  Print("(NF:PR, %s)", (NOPRODUCT == 1)? "*_*": "-*-" );
-	else
-	  Print("(NF:TT, %s)", (NOPRODUCT == 1)? "*_*": "-*-" );
-     }
-   
+  if( __PROT__ ) Print("[%s NF|%s]",(method) ? "PR" : "TT", (NOPRODUCT == 1)? "_,_": "^*^" );
    
 
   if(  !__IGNORETAILS__)
   {
     if( T != NULL )
     {
-#ifndef SING_NDEBUG
-      if( __PROT__ )
+      if( __PROT__ & RTIMER_BENCHMARKING )
       {
+#ifdef SING_NDEBUG
         t = getTimer(); r = getRTimer();
         Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::SetUpTailTerms(): t: %d, r: %d\n", r, t, r);
-      }
 #endif
+      }
 
       SetUpTailTerms();
        
-#ifndef SING_NDEBUG
-      if( __PROT__ )
+#ifdef SING_NDEBUG
+      if( __PROT__ & RTIMER_BENCHMARKING )
       {
         t = getTimer() - t; r = getRTimer() - r;
         Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::SetUpTailTerms(): dt: %d, dr: %d\n", getRTimer(), t, r);
@@ -1158,8 +1219,8 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
     }
   }
 
-#ifndef SING_NDEBUG
-  if( __PROT__ )
+#ifdef SING_NDEBUG
+  if( __PROT__ & RTIMER_BENCHMARKING )
   {
     t = getTimer(); r = getRTimer();
     Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::SyzygyLift: t: %d, r: %d\n", r, t, r);
@@ -1167,11 +1228,7 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
 #endif
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
   
 //  for( int k = 0; k < size; ++k ) // TODO: should be fine now!
@@ -1200,11 +1257,7 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
     //    TT->m[k] = a2;
 
 #ifndef SING_NDEBUG
-    if( __DEBUG__ )
-    {
-      m_div.Verify();
-      m_checker.Verify();
-    }
+    if( __DEBUG__ )    {      m_div.Verify();      m_checker.Verify();    }
 #endif
 
     poly nf;
@@ -1212,17 +1265,13 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
     if( method )
       nf = SchreyerSyzygyNF(a, a2);
     else
-      nf = TraverseNF(a, a2); // TODO: WRONG
+      nf = TraverseNF(a, a2); 
 
 #ifndef SING_NDEBUG
-    if( __DEBUG__ )
-    {
-      m_div.Verify();
-      m_checker.Verify();
-    }
+    if( __DEBUG__ )    {      m_div.Verify();      m_checker.Verify();    }
 #endif
 
-    TT->m[k] = nf; // ???
+    TT->m[k] = nf; 
     
     if( __SYZCHECK__ )      
     {
@@ -1264,46 +1313,36 @@ void SchreyerSyzygyComputation::ComputeSyzygy()
         }
 
 #ifndef SING_NDEBUG
-        if( __DEBUG__ )
-        {
-          m_div.Verify();
-          m_checker.Verify(); 
-        }
+        if( __DEBUG__ )        {          m_div.Verify();          m_checker.Verify();         }
 #endif
         
       } else
         assume( vp == NULL );
 
-      if( __PROT__ && (vp != NULL) )
-        Print("!%d!", k); // check k'th syzygy failed
+      if( __PROT__ && (vp != NULL) ) Warn("ERROR: SyzCheck failed, wrong tail: [%d]\n\n", k); // check k'th syzygy failed
       
       p_Delete(&vp, R);
     }
 
 #ifndef SING_NDEBUG
-    if( __DEBUG__ )
-    {
-      m_div.Verify();
-      m_checker.Verify();
-    }
+    if( __DEBUG__ )    {      m_div.Verify();      m_checker.Verify();    }
 #endif
   }
 
-#ifndef SING_NDEBUG
-    if( __PROT__ )
-    {
-      t = getTimer() - t; r = getRTimer() - r;
-      Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::SyzygyLift: dt: %d, dr: %d\n", getRTimer(), t, r);
-    }
+  if( __PROT__ & RTIMER_BENCHMARKING )
+  {
+#ifdef SING_NDEBUG
+    t = getTimer() - t; r = getRTimer() - r;
+    Print("\n%% %5d **!TIME4!** SchreyerSyzygyComputation::ComputeSyzygy::SyzygyLift: dt: %d, dr: %d\n", getRTimer(), t, r);
 #endif
+  }
 
   TT->rank = id_RankFreeModule(TT, R);
 
   if( __TREEOUTPUT__ )
     PrintS("\n]},");
   
-  if( __PROT__ )
-    PrintLn();
+  if( __PROT__ ) PrintLn();
 }
 
 void SchreyerSyzygyComputation::ComputeLeadingSyzygyTerms(bool bComputeSecondTerms)
@@ -1350,8 +1389,7 @@ void SchreyerSyzygyComputation::ComputeLeadingSyzygyTerms(bool bComputeSecondTer
     assume( m_checker.IsNonempty() ); // TODO: this always fails... BUG????
   }
 
-  if( __PROT__ )
-    Print("[L%dS:%d]", bComputeSecondTerms ? 2 : 1, IDELEMS(m_syzLeads));
+  if( __PROT__ ) Print("(L%dS:%d)", bComputeSecondTerms ? 2 : 1, IDELEMS(m_syzLeads));
       
 }
 
@@ -1424,16 +1462,12 @@ poly SchreyerSyzygyComputation::SchreyerSyzygyNF(const poly syz_lead, poly syz_2
   int  c = p_GetComp(syz_lead, r) - 1;
 
   assume( c >= 0 && c < IDELEMS(T) );
-
-  if( m_sum_bucket == NULL )
-    m_sum_bucket = sBucketCreate(r);
-
-  assume( sIsEmpty(m_sum_bucket) );
   
   if( m_spoly_bucket == NULL )
     m_spoly_bucket = kBucketCreate(r);
 
-  sBucket_pt tail   = m_sum_bucket; assume( tail != NULL ); m_sum_bucket = NULL;
+  SBucketWrapper tail(r, m_sum_bucket_factory);
+
   
   kBucket_pt bucket = m_spoly_bucket; assume( bucket != NULL ); kbTest(bucket); m_spoly_bucket = NULL;
   
@@ -1455,10 +1489,9 @@ poly SchreyerSyzygyComputation::SchreyerSyzygyNF(const poly syz_lead, poly syz_2
   kbTest(bucket);
   p_Delete(&p, r);
 
-  // TODO: use bucket!?
 //  const bool bUsePolynomial = TEST_OPT_NOT_BUCKETS; //  || (pLength(spoly) < MIN_LENGTH_BUCKET);
 //  CPolynomialSummator tail(r, bUsePolynomial);
-  sBucket_Add_p(tail, syz_2, 1); // tail.AddAndDelete(syz_2, 1);
+  tail.Add(syz_2, 1);
 
   kbTest(bucket);
   for( poly spoly = kBucketExtractLm(bucket); spoly != NULL; p_LmDelete(&spoly, r), spoly = kBucketExtractLm(bucket))
@@ -1483,33 +1516,21 @@ poly SchreyerSyzygyComputation::SchreyerSyzygyNF(const poly syz_lead, poly syz_2
 
       p_Delete(&p, r);
 
-      sBucket_Add_p(tail, t, 1); // tail.AddAndDelete(t, 1);
+      tail.Add(t, 1);
     } // otherwise discard that leading term altogether!
     else
-      if( __PROT__ )
-        PrintS("$"); // LOT
+      if( __PROT__ ) ++ m_stat[4]; // PrintS("$"); // LOT
     
     kbTest(bucket);
   }
 
-  // now bucket must be empty!
   kbTest(bucket);
   
+  // now bucket must be empty!
   assume( kBucketClear(bucket) == NULL );
   
-  
-
-  poly result; int len;
-  sBucketClearAdd(tail, &result, &len); // TODO: use Merge with sBucket???
-  assume( pLength(result) == len );
-
-  assume( tail != NULL ); assume ( sIsEmpty(tail) );
-
-  if( m_sum_bucket == NULL )
-    m_sum_bucket = tail;
-  else
-    sBucketDestroy(&tail);
-  
+  const poly result = tail.ClearAdd(); // TODO: use Merge with sBucket???
+ 
 
   if( m_spoly_bucket == NULL )
     m_spoly_bucket = bucket;
@@ -1546,11 +1567,7 @@ bool my_p_LmCmp (poly a, poly b, const ring r) { return p_LmCmp(a, b, r) == -1; 
 poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) const
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ ) {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   const ring& r = m_rBaseRing;
@@ -1593,7 +1610,6 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) co
        
        poly p = p_Copy(itr->second, r); // COPY!!!
 
-
        if( !n_Equal( pGetCoeff(multiplier), pGetCoeff(itr->first), r) ) // normalize coeffs!?
        {
          number n = n_Div( pGetCoeff(multiplier), pGetCoeff(itr->first), r); // new number
@@ -1607,16 +1623,12 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) co
            omFree(s);
          }
          
-         if( __PROT__ )
-           PrintS("l*"); // lookup & rescale
-           
+         if( __PROT__ ) ++ m_stat[7]; // PrintS("l*"); // lookup & rescale
          
          p = p_Mult_nn(p, n, r); // !
          n_Delete(&n, r);        
        } else
-         if( __PROT__ )
-           PrintS("l"); // lookup no rescale
-       
+         if( __PROT__ ) ++ m_stat[6]; // PrintS("l"); // lookup no rescale       
 
        if( __TREEOUTPUT__ )
        {
@@ -1643,8 +1655,7 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) co
        PrintS("], \"noderesult\": \""); writeLatexTerm(p, r, true, false); PrintS("\" },");
      }
 
-     if( __PROT__ )
-       PrintS("S"); // store
+     if( __PROT__ ) ++ m_stat[8]; // PrintS("S"); // store
 
      T.insert( TP2PCache::value_type(p_Copy(multiplier, r), p) ); //     T[ multiplier ] = p;
 
@@ -1652,11 +1663,7 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) co
 //        return (NULL);
 
 #ifndef SING_NDEBUG
-     if( __DEBUG__ )
-     {
-       m_div.Verify();
-       m_checker.Verify();
-     }
+     if( __DEBUG__ )     {       m_div.Verify();       m_checker.Verify();     }
 #endif
      
      return p_Copy(p, r);
@@ -1676,8 +1683,7 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) co
     PrintS("], \"noderesult\": \""); writeLatexTerm(p, r, true, false); PrintS("\" },");
   }
 
-  if( __PROT__ )
-    PrintS("S"); // %d", tail + 1);
+  if( __PROT__ ) ++ m_stat[8]; // PrintS("S"); // store // %d", tail + 1);
   
   T.insert( TP2PCache::value_type(p_Copy(multiplier, r), p) );
 
@@ -1687,11 +1693,7 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, const int tail) co
 //    return (NULL);
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   return p_Copy(p, r);
@@ -1746,23 +1748,20 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, poly tail) const
   assume( T != NULL );
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   if(!(  (!__TAILREDSYZ__)   ||   m_lcm.Check(multiplier)     ))
   {
-    if( __TAILREDSYZ__ && __PROT__ )
-      PrintS("%"); // check LCM !
+    if( __TAILREDSYZ__ && __PROT__ ) ++ m_stat[5]; // PrintS("%"); // check LCM !
     
     return NULL;
   }
     
   //    const bool bUsePolynomial = TEST_OPT_NOT_BUCKETS; //  || (pLength(tail) < MIN_LENGTH_BUCKET);
 
+  SBucketWrapper sum(r, m_sum_bucket_factory);
+/*  
   sBucket_pt sum;
 
   if( m_sum_bucket == NULL )
@@ -1781,52 +1780,54 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, poly tail) const
 
   assume( sum != NULL ); assume ( sIsEmpty(sum) );
   assume( r == sBucketGetRing(sum) );
+*/  
 
-  poly s; int len;
+//  poly s; int len;
 
   //    CPolynomialSummator sum(r, bUsePolynomial);
   //    poly s = NULL;
 
-  if( __TREEOUTPUT__ )
+  if( __TREEOUTPUT__ & 0 )
   {
     Print("{ \"proc\": \"TTPoly\", \"nodelabel\": \""); writeLatexTerm(multiplier, r, false); Print(" * \\\\ldots \", \"children\": [");
   }
 
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   for(poly p = tail; p != NULL; p = pNext(p))   // iterate over the tail
   {
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     const poly rt = ReduceTerm(multiplier, p, NULL); // TODO: also return/store length?
+    sum.Add(rt);
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    const int lp = pLength(rt);
-
-    if( rt != NULL && lp != 0 )
-      sBucket_Add_p(sum, rt, lp);
+//    const int lp = pLength(rt);
+//    if( rt != NULL && lp != 0 )
+//      sBucket_Add_p(sum, rt, lp);
   }
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  sBucketClearAdd(sum, &s, &len); // Will Not Clear?!?
+//  sBucketClearAdd(sum, &s, &len); // Will Not Clear?!?
+  const poly s = sum.ClearAdd();
 
-  assume( sum != NULL ); assume ( sIsEmpty(sum) );
-
+//  assume( sum != NULL ); assume ( sIsEmpty(sum) );
+/*
   if( m_sum_bucket == NULL )
     m_sum_bucket = sum;
   else
     sBucketDestroy(&sum);   
 
   assume( pLength(s) == len );
+*/
+  
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
-  if( __TREEOUTPUT__ )
+  if( __TREEOUTPUT__ & 0 )
   {
     PrintS("], \"noderesult\": \""); writeLatexTerm(s, r, true, false); PrintS("\" },");
   }
@@ -1841,11 +1842,7 @@ poly SchreyerSyzygyComputation::TraverseTail(poly multiplier, poly tail) const
 poly SchreyerSyzygyComputation::ReduceTerm(poly multiplier, poly term4reduction, poly syztermCheck) const
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   assume( !__IGNORETAILS__ );
@@ -1871,8 +1868,7 @@ poly SchreyerSyzygyComputation::ReduceTerm(poly multiplier, poly term4reduction,
     
     if( s == NULL ) // No Reducer?
     {      
-      if( __PROT__ )
-        PrintS("$" ); // LOT?!
+      if( __PROT__ ) ++ m_stat[4]; // PrintS("$"); // LOT
       
       return s;
     }
@@ -1891,8 +1887,7 @@ poly SchreyerSyzygyComputation::ReduceTerm(poly multiplier, poly term4reduction,
 
     if( s == NULL ) // No Reducer?
     {
-      if( __PROT__ )
-        PrintS("$" ); // LOT?!
+      if( __PROT__ ) ++ m_stat[4]; // PrintS("$"); // LOT
 
       return s;
     }
@@ -1907,17 +1902,12 @@ poly SchreyerSyzygyComputation::ReduceTerm(poly multiplier, poly term4reduction,
   }
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   if( s == NULL ) // No Reducer?
   {
-    if( __TAILREDSYZ__&& __PROT__ )
-      PrintS("%" ); // LCM check
+    if( __TAILREDSYZ__ && __PROT__ ) ++ m_stat[5]; // PrintS("%"); // check LCM !
     
     return s;
   }
@@ -1933,14 +1923,11 @@ poly SchreyerSyzygyComputation::ReduceTerm(poly multiplier, poly term4reduction,
 
   const poly t = TraverseTail(b, c); // T->m[c];
 
-  if( t != NULL )
-    s = p_Add_q(s, t, r);
-
   if( __TREEOUTPUT__ )
   {
 
     PrintS("], \"noderesult\": \"");
-    writeLatexTerm(s, r, true, false);
+    writeLatexTerm(t, r, true, false);
     PrintS("\"");
 
     if( syztermCheck != NULL )
@@ -1952,13 +1939,13 @@ poly SchreyerSyzygyComputation::ReduceTerm(poly multiplier, poly term4reduction,
       PrintS(" },");
   }
 
+
+  if( t != NULL )
+    s = p_Add_q(s, t, r);
+
   
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    m_div.Verify();
-    m_checker.Verify();
-  }
+  if( __DEBUG__ )  {    m_div.Verify();    m_checker.Verify();  }
 #endif
 
   
@@ -1978,7 +1965,7 @@ SchreyerSyzygyComputationFlags::SchreyerSyzygyComputationFlags(idhdl rootRingHdl
     m_rBaseRing( rootRingHdl->data.uring )
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ && 0 )
+  if( __DEBUG__ & 0 )
   {
     PrintS("SchreyerSyzygyComputationFlags: \n");
     Print("        DEBUG: \t%d\n", __DEBUG__);
@@ -2165,6 +2152,7 @@ bool CLeadingTerm::DivisibilityCheck(const poly product, const unsigned long not
 
 }
 
+#if NOPRODUCT
 /// as DivisibilityCheck(multiplier * t, ...) for monomial 'm'
 /// and a module term 't'
 bool CLeadingTerm::DivisibilityCheck(const poly m, const poly t, const unsigned long not_sev, const ring r) const
@@ -2193,7 +2181,7 @@ bool CLeadingTerm::DivisibilityCheck(const poly m, const poly t, const unsigned 
   return _p_LmDivisibleByNoComp(lt(), m, t, r);
 //  return p_LmShortDivisibleByNoComp(p, p_sev, product, not_sev, r);
 }
-
+#endif
 
 
 /// TODO:
@@ -2226,8 +2214,7 @@ class CDivisorEnumerator: public SchreyerSyzygyComputationFlags
       assume( product != NULL ); // may have no coeff yet :(
 //      assume ( !n_IsZero( p_GetCoeff(product, m_rBaseRing), m_rBaseRing ) );
 #ifndef SING_NDEBUG
-      if( __DEBUG__ )
-        m_reds.Verify();
+      if( __DEBUG__ )        m_reds.Verify();
 #endif
     }
 
@@ -2303,8 +2290,7 @@ class CDivisorEnumerator: public SchreyerSyzygyComputationFlags
 bool CReducerFinder::IsDivisible(const poly product) const
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-    Verify();
+  if( __DEBUG__ )    Verify();
 #endif
   
   assume( product != NULL );
@@ -2419,6 +2405,8 @@ void CReducerFinder::DebugPrint() const
 }
 #endif
 
+#if NOPRODUCT
+
 /// TODO:
 class CDivisorEnumerator2: public SchreyerSyzygyComputationFlags
 {
@@ -2455,8 +2443,7 @@ class CDivisorEnumerator2: public SchreyerSyzygyComputationFlags
       
 //      assume( p_GetComp(m_multiplier, m_rBaseRing) == 0 );
 #ifndef SING_NDEBUG
-      if( __DEBUG__ )
-        m_reds.Verify();
+      if( __DEBUG__ ) m_reds.Verify();
 #endif
     }
 
@@ -2533,11 +2520,7 @@ poly CReducerFinder::FindReducer(const poly multiplier, const poly t,
                                  const CReducerFinder& syz_checker) const
 {
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    Verify();
-    syz_checker.Verify();
-  }
+  if( __DEBUG__ )  {    Verify();    syz_checker.Verify();  }
 #endif
 
   CDivisorEnumerator2 itr(*this, multiplier, t);
@@ -2575,11 +2558,7 @@ poly CReducerFinder::FindReducer(const poly multiplier, const poly t,
   }
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    Verify();
-    syz_checker.Verify();
-  }
+  if( __DEBUG__ )  {    Verify();    syz_checker.Verify();  }
 #endif
   
   const BOOLEAN to_check = (syz_checker.IsNonempty()); // __TAILREDSYZ__ &&
@@ -2635,11 +2614,7 @@ poly CReducerFinder::FindReducer(const poly multiplier, const poly t,
     n_Delete(&n, r);
 
 #ifndef SING_NDEBUG
-    if( __DEBUG__ )
-    {
-      Verify();
-      syz_checker.Verify();
-    }
+    if( __DEBUG__ )    {      Verify();      syz_checker.Verify();    }
 #endif
     
     assume( itr.Current().CheckLT( L ) ); // ???
@@ -2734,27 +2709,20 @@ poly CReducerFinder::FindReducer(const poly multiplier, const poly t,
   p_LmFree(q, r);
   
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    Verify();
-    syz_checker.Verify();
-  }
+  if( __DEBUG__ )  {    Verify();    syz_checker.Verify();  }
 #endif
 
   return NULL;
 
 }
+#endif
 
 
 poly CReducerFinder::FindReducer(const poly product, const poly syzterm, const CReducerFinder& syz_checker) const
 {
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    Verify();
-    syz_checker.Verify();
-  }
+  if( __DEBUG__ )  {    Verify();    syz_checker.Verify();  }
 #endif
 
   CDivisorEnumerator itr(*this, product);
@@ -2792,11 +2760,7 @@ poly CReducerFinder::FindReducer(const poly product, const poly syzterm, const C
   }
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    Verify();
-    syz_checker.Verify();
-  }
+  if( __DEBUG__ )  {    Verify();    syz_checker.Verify();  }
 #endif
 
   const BOOLEAN to_check = (syz_checker.IsNonempty()); // __TAILREDSYZ__ &&
@@ -2850,11 +2814,7 @@ poly CReducerFinder::FindReducer(const poly product, const poly syzterm, const C
     assume( itr.Current().CheckLT( L ) ); // ???
     
 #ifndef SING_NDEBUG
-    if( __DEBUG__ )
-    {
-      Verify();
-      syz_checker.Verify();
-    }
+    if( __DEBUG__ )    {      Verify();      syz_checker.Verify();    }
 #endif
     
     return q;
@@ -2951,11 +2911,7 @@ poly CReducerFinder::FindReducer(const poly product, const poly syzterm, const C
   p_LmFree(q, r);
 
 #ifndef SING_NDEBUG
-  if( __DEBUG__ )
-  {
-    Verify();
-    syz_checker.Verify();
-  }
+  if( __DEBUG__ )  {    Verify();    syz_checker.Verify();  }
 #endif
   
   return NULL;
@@ -3024,7 +2980,7 @@ template class std::map< CReducerFinder::TComponentKey, CReducerFinder::TReducer
 template class std::map<TCacheKey, TCacheValue, struct CCacheCompare>;
 template class std::map<int, TP2PCache>;
 
-
+template class std::stack <sBucket_pt>;
 
 END_NAMESPACE               END_NAMESPACE_SINGULARXX
 
